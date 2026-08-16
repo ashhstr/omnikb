@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "omnikb": {
+      "command": "node",
+      "args": [
+        "path/to/omnikb/dist/cli.js",
+        "serve",
+        "--mcp"
+      ]
+    }
+  }
+}
