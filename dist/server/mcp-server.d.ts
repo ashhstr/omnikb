@@ -1,8 +1,6 @@
 import { GraphEngine } from '../core/graph';
 import { KnowledgeStorage } from '../core/storage';
 import { WorkspaceWatcher } from '../core/watcher';
-import { CodeParser } from '../core/parser';
-import { KnowledgeReporter } from '../core/reporter';
 export interface JsonRpcRequest {
     jsonrpc: '2.0';
     id?: string | number | null;
@@ -20,22 +18,11 @@ export interface JsonRpcResponse {
     };
 }
 export declare class McpServer {
-    private workspaceRoot;
-    private parser;
-    private storage;
     private graph;
-    private reporter;
+    private storage;
     private watcher;
     private rl;
-    constructor(workspaceRoot: string, parser: CodeParser, storage: KnowledgeStorage, graph: GraphEngine, reporter: KnowledgeReporter, watcher: WorkspaceWatcher);
-    /**
-     * Helper to normalize file URIs and Windows/POSIX paths to absolute system paths
-     */
-    private parsePath;
-    /**
-     * Dynamically switches the active project workspace, scans it, and starts auto-sync
-     */
-    switchWorkspace(targetPath: string): Promise<boolean>;
+    constructor(graph: GraphEngine, storage: KnowledgeStorage, watcher: WorkspaceWatcher);
     /**
      * Starts reading JSON-RPC requests from standard input (stdio)
      */

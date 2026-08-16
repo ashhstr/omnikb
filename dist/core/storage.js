@@ -42,7 +42,8 @@ class KnowledgeStorage {
     nodes = new Map();
     edges = new Map();
     files = new Map();
-    // Inverted indexes for instant retrieval (internal implementation detail)
+    lastUpdated = Date.now();
+    // Inverted indexes for instant retrieval
     symbolIndex = new Map(); // SymbolName -> Set of Node IDs
     fileNodesIndex = new Map(); // FilePath -> Set of Node IDs
     fileEdgesIndex = new Map(); // FilePath -> Set of Edge IDs
@@ -71,6 +72,7 @@ class KnowledgeStorage {
             const raw = fs.readFileSync(this.dbFilePath, 'utf8');
             const data = JSON.parse(raw);
             this.clearInMemory();
+            this.lastUpdated = data.lastUpdated || Date.now();
             // Restore files
             for (const [filePath, meta] of Object.entries(data.files)) {
                 this.files.set(filePath, meta);
@@ -97,9 +99,11 @@ class KnowledgeStorage {
         if (!fs.existsSync(this.dbDir)) {
             fs.mkdirSync(this.dbDir, { recursive: true });
         }
+        const now = Date.now();
+        this.lastUpdated = now;
         const dump = {
             version: 1,
-            lastUpdated: Date.now(),
+            lastUpdated: now,
             files: Object.fromEntries(this.files),
             nodes: Array.from(this.nodes.values()),
             edges: Array.from(this.edges.values()),
@@ -201,17 +205,18 @@ class KnowledgeStorage {
             .sort((a, b) => b[1].score - a[1].score)
             .slice(0, limit);
         return sorted
-            .flatMap(([nodeId, info]) => {
+            .map(([nodeId, info]) => {
             const node = this.nodes.get(nodeId);
             if (!node)
-                return [];
-            return [{
-                    nodes: [node],
-                    score: info.score,
-                    matchType: info.matchType,
-                    highlight: node.signature || node.name,
-                }];
-        });
+                return null;
+            return {
+                nodes: [node],
+                score: info.score,
+                matchType: info.matchType,
+                highlight: node.signature || node.name,
+            };
+        })
+            .filter((r) => r !== null);
     }
     /**
      * Find nodes matching symbol name
@@ -224,12 +229,6 @@ class KnowledgeStorage {
         return Array.from(nodeIds)
             .map((id) => this.nodes.get(id))
             .filter((n) => n !== undefined);
-    }
-    /**
-     * Number of code nodes contained within a file (read-only view)
-     */
-    getFileNodeCount(filePath) {
-        return this.fileNodesIndex.get(filePath)?.size || 0;
     }
     insertNodeInMemory(node) {
         this.nodes.set(node.id, node);

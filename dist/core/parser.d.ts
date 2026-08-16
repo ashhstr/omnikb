@@ -20,10 +20,7 @@ export declare class CodeParser {
      */
     parseFile(relativeFilePath: string, content: string): ParseResult;
     /**
-     * TypeScript & JavaScript AST-based structural extraction.
-     * Uses the TypeScript Compiler API for exact extraction (zero false
-     * positives on strings/templates/self-edges), falling back to the legacy
-     * regex pipeline for malformed files.
+     * TypeScript & JavaScript AST & structural extraction
      */
     private parseTypeScriptOrJavaScript;
     /**
@@ -51,12 +48,6 @@ export declare class CodeParser {
      * Helper: Extracts function calls from a function's code body
      */
     private extractCallsFromBody;
-    /**
-     * Removes single/double-quoted strings and template literals (including
-     * multi-line ones) from a code body, preserving code structure for regex
-     * call extraction.
-     */
-    private stripStringLiterals;
     private getLineNumber;
     private findMatchingBracketEndLine;
     private findPythonBlockEndLine;

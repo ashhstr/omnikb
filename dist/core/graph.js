@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GraphEngine = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const parser_1 = require("./parser");
 class GraphEngine {
     storage;
     workspaceRoot;
@@ -44,14 +45,10 @@ class GraphEngine {
         this.storage = storage;
     }
     /**
-     * Resolves raw symbolic edges (e.g. sym:myFunc) to concrete node IDs.
-     * Utilizes AST import mapping and file definitions for 100% exact precision (zero heuristic ambiguity).
+     * Resolves raw symbolic edges (e.g. sym:myFunc) to concrete node IDs
      */
     resolveCrossFileReferences() {
-        const symbolMap = new Map(); // Symbol name (lower) -> Array of Node IDs
-        const fileSymbolsMap = new Map(); // FilePath -> Map<SymbolNameLower, Node ID>
-        const fileImportsMap = new Map();
-        // 1. Build file-to-symbol and global symbol index
+        const symbolMap = new Map(); // Symbol name -> Array of Node IDs
         for (const node of this.storage.nodes.values()) {
             if (node.kind !== 'file' && node.kind !== 'doc_document') {
                 const key = node.name.toLowerCase();
@@ -59,125 +56,88 @@ class GraphEngine {
                     symbolMap.set(key, []);
                 }
                 symbolMap.get(key).push(node.id);
-                if (!fileSymbolsMap.has(node.filePath)) {
-                    fileSymbolsMap.set(node.filePath, new Map());
-                }
-                fileSymbolsMap.get(node.filePath).set(key, node.id);
             }
         }
-        // 2. Index all file import statements
-        for (const edge of this.storage.edges.values()) {
-            if (edge.kind === 'imports') {
-                if (!fileImportsMap.has(edge.filePath)) {
-                    fileImportsMap.set(edge.filePath, []);
-                }
-                const importedSymbols = edge.metadata?.importedSymbols || [];
-                const rawPath = edge.metadata?.rawImportPath || edge.targetName || '';
-                const resolvedPath = edge.metadata?.resolvedModulePath || edge.targetId.replace(/^file:/, '');
-                const isNamespace = !!edge.metadata?.isNamespace;
-                fileImportsMap.get(edge.filePath).push({
-                    rawPath,
-                    resolvedPath,
-                    symbols: importedSymbols.map((s) => s.toLowerCase()),
-                    isNamespace,
-                });
-            }
-        }
-        // 3. Resolve symbolic edges
         for (const edge of this.storage.edges.values()) {
             if (edge.targetId.startsWith('sym:')) {
-                const symName = edge.targetId.slice(4);
-                const symLower = symName.toLowerCase();
-                const callerFile = edge.filePath;
-                // Rule 1: Same-file definition (highest precision)
-                const sameFileNodeId = fileSymbolsMap.get(callerFile)?.get(symLower);
-                if (sameFileNodeId) {
-                    edge.targetId = sameFileNodeId;
-                    edge.confidence = 'exact';
-                    continue;
-                }
-                // Rule 2: Explicit AST import match (100% exact cross-file precision)
-                const fileImports = fileImportsMap.get(callerFile);
-                let resolvedExact = false;
-                if (fileImports && fileImports.length > 0) {
-                    for (const imp of fileImports) {
-                        // Check if symbol is explicitly in named imports or namespace/require
-                        const symbolExplicitlyImported = imp.symbols.includes(symLower) || imp.isNamespace;
-                        if (symbolExplicitlyImported) {
-                            // Find matching workspace file
-                            const candidatePaths = [
-                                imp.resolvedPath,
-                                `${imp.resolvedPath}.ts`,
-                                `${imp.resolvedPath}.tsx`,
-                                `${imp.resolvedPath}.js`,
-                                `${imp.resolvedPath}.jsx`,
-                                `${imp.resolvedPath}/index.ts`,
-                                `${imp.resolvedPath}/index.js`,
-                            ];
-                            for (const candidate of candidatePaths) {
-                                const targetNodeId = fileSymbolsMap.get(candidate)?.get(symLower);
-                                if (targetNodeId) {
-                                    edge.targetId = targetNodeId;
-                                    edge.confidence = 'exact';
-                                    resolvedExact = true;
-                                    break;
-                                }
-                            }
-                            if (resolvedExact)
-                                break;
+                const symName = edge.targetId.slice(4).toLowerCase();
+                const targets = symbolMap.get(symName);
+                if (targets && targets.length > 0) {
+                    // If unambiguous, resolve directly
+                    if (targets.length === 1) {
+                        edge.targetId = targets[0];
+                        edge.confidence = 'exact';
+                    }
+                    else {
+                        // Find closest candidate by file proximity or import
+                        const sameFile = targets.find((t) => t.startsWith(edge.filePath));
+                        if (sameFile) {
+                            edge.targetId = sameFile;
+                            edge.confidence = 'exact';
+                        }
+                        else {
+                            edge.targetId = targets[0];
+                            edge.confidence = 'heuristic';
                         }
                     }
                 }
-                if (resolvedExact)
-                    continue;
-                // Rule 3: Unambiguous global symbol across entire workspace
-                const globalTargets = symbolMap.get(symLower);
-                if (globalTargets && globalTargets.length === 1) {
-                    edge.targetId = globalTargets[0];
-                    edge.confidence = 'exact';
-                    continue;
-                }
-                // Rule 4: Heuristic fallback based on directory proximity
-                if (globalTargets && globalTargets.length > 1) {
-                    const callerDir = path.dirname(callerFile).replace(/\\/g, '/');
-                    let bestCandidate = globalTargets[0];
-                    let bestCommonLength = -1;
-                    for (const candId of globalTargets) {
-                        const candNode = this.storage.nodes.get(candId);
-                        if (candNode) {
-                            const candDir = path.dirname(candNode.filePath).replace(/\\/g, '/');
-                            const commonPrefix = this.getCommonPathPrefix(callerDir, candDir);
-                            if (commonPrefix.length > bestCommonLength) {
-                                bestCommonLength = commonPrefix.length;
-                                bestCandidate = candId;
-                            }
-                        }
-                    }
-                    edge.targetId = bestCandidate;
-                    edge.confidence = 'heuristic';
-                }
             }
         }
-    }
-    getCommonPathPrefix(a, b) {
-        const partsA = a.split('/');
-        const partsB = b.split('/');
-        const common = [];
-        for (let i = 0; i < Math.min(partsA.length, partsB.length); i++) {
-            if (partsA[i] === partsB[i]) {
-                common.push(partsA[i]);
-            }
-            else {
-                break;
-            }
-        }
-        return common.join('/');
     }
     /**
-     * Explores code symbol, flow, and verbatim code in a single call (inspired by CodeGraph).
-     * Supports dynamic full-file drilldown and import inspection.
+     * Performs atomic verification of graph data freshness against current disk state
      */
-    explore(query, maxDepth = 3, options) {
+    checkFreshness(filePaths) {
+        let isFresh = true;
+        let staleReason;
+        let diskMtime;
+        let combinedHash = '';
+        for (const relPath of filePaths) {
+            if (!relPath)
+                continue;
+            const absPath = path.isAbsolute(relPath) ? relPath : path.join(this.workspaceRoot, relPath);
+            const meta = this.storage.files.get(relPath);
+            if (!fs.existsSync(absPath)) {
+                if (meta) {
+                    isFresh = false;
+                    staleReason = 'file_deleted';
+                }
+                continue;
+            }
+            try {
+                const stats = fs.statSync(absPath);
+                diskMtime = Math.max(diskMtime || 0, stats.mtimeMs);
+                if (meta) {
+                    // If disk modification time is strictly newer than stored lastModified (with 50ms tolerance)
+                    if (stats.mtimeMs > meta.lastModified + 50) {
+                        const currentContent = fs.readFileSync(absPath, 'utf8');
+                        const currentHash = parser_1.CodeParser.computeHash(currentContent);
+                        if (currentHash !== meta.hash) {
+                            isFresh = false;
+                            staleReason = 'file_modified_on_disk';
+                        }
+                    }
+                    combinedHash += meta.hash.slice(0, 8);
+                }
+            }
+            catch {
+                isFresh = false;
+            }
+        }
+        return {
+            isFresh,
+            isStale: !isFresh,
+            indexedAt: this.storage.lastUpdated || Date.now(),
+            diskLastModified: diskMtime,
+            contentHash: combinedHash || 'clean',
+            staleReason,
+            pendingInQueue: false,
+        };
+    }
+    /**
+     * Explores code symbol, flow, and verbatim code in a single call (inspired by CodeGraph)
+     */
+    explore(query, maxDepth = 3) {
         // 1. Find matching target nodes
         let targetNodes = this.storage.findNodesByName(query);
         // Fallback to full-text search if no exact symbol name found
@@ -194,6 +154,7 @@ class GraphEngine {
                 callees: [],
                 impactRadius: { directAffected: [], transitiveAffected: [], affectedFiles: [] },
                 verbatimSource: [],
+                freshness: this.checkFreshness([]),
             };
         }
         const primaryNode = targetNodes[0];
@@ -231,45 +192,8 @@ class GraphEngine {
                     relatedDocs.push(docNode);
             }
         }
-        // 6. Dynamic Full-File Drilldown (options.includeFullFile)
-        let fullFileSource;
-        if (options?.includeFullFile) {
-            const distinctFiles = Array.from(new Set(targetNodes.map((n) => n.filePath)));
-            fullFileSource = [];
-            for (const f of distinctFiles) {
-                const absPath = path.isAbsolute(f) ? f : path.join(this.workspaceRoot, f);
-                if (fs.existsSync(absPath)) {
-                    try {
-                        const content = fs.readFileSync(absPath, 'utf8');
-                        const lineCount = content.split('\n').length;
-                        fullFileSource.push({
-                            filePath: f,
-                            content,
-                            lineCount,
-                        });
-                    }
-                    catch { }
-                }
-            }
-        }
-        // 7. Dynamic Import Inspection (options.includeImports)
-        let importedSymbols;
-        if (options?.includeImports) {
-            const distinctFiles = Array.from(new Set(targetNodes.map((n) => n.filePath)));
-            importedSymbols = [];
-            for (const f of distinctFiles) {
-                const fileNodeId = `file:${f}`;
-                for (const edge of this.storage.edges.values()) {
-                    if (edge.sourceId === fileNodeId && edge.kind === 'imports') {
-                        importedSymbols.push({
-                            sourceFile: f,
-                            importedFile: edge.metadata?.rawImportPath || edge.targetName || edge.targetId.replace(/^file:/, ''),
-                            symbols: edge.metadata?.importedSymbols || [],
-                        });
-                    }
-                }
-            }
-        }
+        const touchedFiles = Array.from(new Set([primaryNode.filePath, ...callers.map((c) => c.filePath), ...callees.map((c) => c.filePath)]));
+        const freshness = this.checkFreshness(touchedFiles);
         return {
             query,
             targetNodes,
@@ -282,9 +206,11 @@ class GraphEngine {
                 affectedFiles: impact.affectedFiles,
             },
             verbatimSource,
-            fullFileSource,
-            importedSymbols,
             relatedDocs,
+            stalenessWarning: freshness.isStale
+                ? `Warning: graph data for ${touchedFiles.join(', ')} may be stale due to: ${freshness.staleReason}`
+                : undefined,
+            freshness,
         };
     }
     /**
@@ -344,6 +270,7 @@ class GraphEngine {
             riskScore = 'MEDIUM';
         }
         const summary = `Changing '${target}' impacts ${directCallers.length} direct caller(s), ${transitiveCallers.length} transitive caller(s) across ${affectedFilesSet.size} file(s), and ${affectedRoutes.length} HTTP route(s). Risk Level: ${riskScore}.`;
+        const freshness = this.checkFreshness(Array.from(affectedFilesSet));
         return {
             target,
             targetNode,
@@ -353,6 +280,7 @@ class GraphEngine {
             affectedRoutes,
             riskScore,
             summary,
+            freshness,
         };
     }
     /**

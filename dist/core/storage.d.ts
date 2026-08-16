@@ -1,5 +1,4 @@
 import { CodeNode, CodeEdge, FileMetadata, SearchResult } from '../types';
-import { IKnowledgeStorage, IKnowledgeIndexReader } from './storage-types';
 export interface StorageDump {
     version: number;
     lastUpdated: number;
@@ -7,16 +6,17 @@ export interface StorageDump {
     nodes: CodeNode[];
     edges: CodeEdge[];
 }
-export declare class KnowledgeStorage implements IKnowledgeStorage, IKnowledgeIndexReader {
+export declare class KnowledgeStorage {
     private dbDir;
     private dbFilePath;
-    readonly nodes: Map<string, CodeNode>;
-    readonly edges: Map<string, CodeEdge>;
-    readonly files: Map<string, FileMetadata>;
-    private symbolIndex;
-    private fileNodesIndex;
-    private fileEdgesIndex;
-    private tokenIndex;
+    nodes: Map<string, CodeNode>;
+    edges: Map<string, CodeEdge>;
+    files: Map<string, FileMetadata>;
+    lastUpdated: number;
+    symbolIndex: Map<string, Set<string>>;
+    fileNodesIndex: Map<string, Set<string>>;
+    fileEdgesIndex: Map<string, Set<string>>;
+    tokenIndex: Map<string, Set<string>>;
     constructor(workspaceRoot: string);
     /**
      * Initializes storage directory and loads existing graph state if present
@@ -46,10 +46,6 @@ export declare class KnowledgeStorage implements IKnowledgeStorage, IKnowledgeIn
      * Find nodes matching symbol name
      */
     findNodesByName(name: string): CodeNode[];
-    /**
-     * Number of code nodes contained within a file (read-only view)
-     */
-    getFileNodeCount(filePath: string): number;
     private insertNodeInMemory;
     private insertEdgeInMemory;
     private indexNodeTokens;
