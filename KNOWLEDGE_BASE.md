@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T14:31:24.147Z | **Indexed Files**: 56 | **Total Symbols**: 203 | **Call & Dependency Edges**: 1171
+> **Auto-Updated**: 2026-08-16T14:48:08.688Z | **Indexed Files**: 55 | **Total Symbols**: 212 | **Call & Dependency Edges**: 1228
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `56` |
-| **Functions & Methods** | `84` |
+| **Source Files** | `55` |
+| **Functions & Methods** | `86` |
 | **Classes & Interfaces** | `42` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 8`, `typescript: 22`, `yaml: 1` |
+| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 8`, `typescript: 22` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,11 +18,11 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls |
 | :--- | :--- | :--- | :--- | :--- |
-| **`runTests`** | `test/run-tests.js` | **142** | 3 | 139 |
+| **`runTests`** | `test/run-tests.js` | **164** | 3 | 161 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
 | **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
 | **`main`** | `src/cli.ts` | **67** | 1 | 66 |
-| **`start`** | `src/server/http-server.ts` | **48** | 4 | 44 |
+| **`start`** | `src/server/http-server.ts` | **50** | 5 | 45 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
 | **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
 | **`initialScan`** | `src/core/watcher.ts` | **29** | 8 | 21 |
@@ -41,11 +41,11 @@ The most referenced and interconnected symbols in this repository:
 - **`KNOWLEDGE_BASE.md`**: `11 symbols`
 - **`SECURITY.md`**: `5 symbols`
 - **`tsconfig.json`**: `1 symbols`
-- **`CONTRIBUTING.md`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
 - **`package.json`**: `1 symbols`
 - **`README.md`**: `1 symbols`
 - **`.gitignore`**: `1 symbols`
+- **`CONTRIBUTING.md`**: `9 symbols`
 
 ### `/scripts` (10 files)
 - **`scripts/install-startup.vbs`**: `1 symbols`
@@ -56,8 +56,8 @@ The most referenced and interconnected symbols in this repository:
 - **`scripts/benchmark-tokens.js`**: `2 symbols`
 - **`scripts/supervisor.js`**: `2 symbols`
 - **`scripts/diagnose.js`**: `1 symbols`
-- **`scripts/release.js`**: `1 symbols`
 - **`scripts/pre-commit.js`**: `1 symbols`
+- **`scripts/release.js`**: `2 symbols`
 
 ### `/examples` (6 files)
 - **`examples/configs/antigravity.mcp.json`**: `1 symbols`
@@ -89,10 +89,7 @@ The most referenced and interconnected symbols in this repository:
 
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
-- **`test/run-tests.js`**: `3 symbols`
-
-### `/.github` (1 files)
-- **`.github/workflows/ci.yml`**: `1 symbols`
+- **`test/run-tests.js`**: `4 symbols`
 
 ## 5. Agent Instructions for Context Retrieval
 

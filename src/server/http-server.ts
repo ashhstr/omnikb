@@ -1,5 +1,4 @@
 import * as http from 'http';
-import * as url from 'url';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GraphEngine } from '../core/graph';
@@ -42,8 +41,9 @@ export class LocalHttpServer {
           return;
         }
 
-        const parsedUrl = url.parse(req.url || '', true);
-        const pathname = parsedUrl.pathname || '/';
+        const reqUrl = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
+        const pathname = reqUrl.pathname || '/';
+        const query = Object.fromEntries(reqUrl.searchParams.entries());
 
         try {
           // 1. Health check

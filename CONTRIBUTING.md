@@ -1,56 +1,59 @@
-# Contributing to OmniKB
+# OmniKB Engineering & Release Standards
 
-Thank you for your interest in contributing to **OmniKB**! 🚀
-
-OmniKB is an open-source, high-speed local code knowledge base and Graph RAG engine designed to unify multi-agent intelligence.
+Thank you for your interest in developing and maintaining **OmniKB**! 🚀
 
 ---
 
-## 🛠️ Development Setup
+## 🔒 1. Strict Commit Policy
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/ashhstr/omnikb.git
-   cd omnikb
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Build TypeScript**:
-   ```bash
-   npm run build
-   ```
-
-4. **Run Verification Test Suite**:
-   ```bash
-   npm test
-   ```
+> [!IMPORTANT]
+> **Git commits in this repository are strictly and exclusively reserved for the development, maintenance, and enhancement of the OmniKB knowledge engine.**
+> - Never commit unrelated files, personal scratchpads, or third-party project files.
+> - Never commit secrets, tokens, credentials, private keys, `.env` files, or personal environment configs.
+> - Follow Conventional Commits format: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`.
 
 ---
 
-## 🧪 Guidelines
+## 🎯 2. Release Gate & Zero-Tolerance Stability Criteria
 
-- **Zero External Runtime Dependencies**: OmniKB is designed to be ultra-lightweight and run anywhere with pure Node.js standard libraries.
-- **Language Support**: When extending the AST parser (`src/core/parser.ts`), ensure new regex or syntax rules are backed by unit tests in `test/run-tests.js`.
-- **Debounced Watcher**: Changes to the file watcher (`src/core/watcher.ts`) must maintain the `<500ms` debounce threshold and support native OS events with graceful directory-walk fallbacks.
+A new release (minor, mayor, or major overhaul) may **ONLY** be published when the following criteria are 100% satisfied:
+
+1. **0 Issues, 0 Bugs, 0 Runtime Errors**:
+   - Zero compilation errors (`npm run build`).
+   - Zero test failures across all 8 verification suites (`npm test`).
+   - Zero broken edges or missing file references (`npm run diagnose`).
+2. **Seamless Operation**:
+   - Flawless background auto-sync without crashes, memory leaks, or file-lock conflicts.
+   - 100% Freshness Guarantee verified by content-hashing and atomic reconciliation.
+3. **Multi-Agent Protocol Compatibility**:
+   - 🤖 **Antigravity**: Seamless MCP stdio protocol & tool invocation (`kb_explore`, `kb_impact`, `kb_god_nodes`, `kb_sync`).
+   - 🟣 **Claude / Claude Code**: Full MCP tool schema compliance with rich JSON payload & verbatim lines.
+   - 🟢 **ChatGPT / OpenAI Tools / Codex**: High-speed local REST API endpoints (`/v1/explore`, `/v1/impact`, `/v1/god-nodes`).
+   - 📄 **File-Based Agents (Aider / Chat LLMs)**: Auto-updating real-time `KNOWLEDGE_BASE.md`.
 
 ---
 
-## 📝 Pull Request Process
+## 🛠️ Verification & Quality Command
 
-1. Fork the repo and create your branch from `main`:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-2. Commit your changes with clear commit messages.
-3. Ensure all tests pass (`npm test`).
-4. Push to your branch and open a Pull Request.
+Before any commit or release, execute the automated pre-commit gate:
+
+```bash
+npm run precommit
+```
+
+To release a new version through the automated GitHub CLI pipeline:
+```bash
+# Minor update (bugfix / perbaikan kecil -> angka belakang)
+npm run release -- minor
+
+# Mayor update (fitur baru / update penting -> angka tengah)
+npm run release -- mayor
+
+# Major overhaul (update besar-besaran -> angka depan)
+npm run release -- besar
+```
 
 ---
 
 ## 📜 License
-
-By contributing to OmniKB, you agree that your contributions will be licensed under its [MIT License](LICENSE).
+Licensed under the [MIT License](LICENSE).
