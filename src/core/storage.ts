@@ -96,18 +96,9 @@ export class KnowledgeStorage {
       edges: Array.from(this.edges.values()),
     };
 
-    const tempPath = `${this.dbFilePath}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
     const jsonStr = JSON.stringify(dump, null, 2);
-
     try {
-      await fs.promises.writeFile(tempPath, jsonStr, 'utf8');
-      try {
-        await fs.promises.rename(tempPath, this.dbFilePath);
-      } catch (renameErr) {
-        // Fallback for Windows EPERM/EBUSY
-        await fs.promises.copyFile(tempPath, this.dbFilePath);
-        await fs.promises.unlink(tempPath).catch(() => {});
-      }
+      await fs.promises.writeFile(this.dbFilePath, jsonStr, 'utf8');
     } catch (err: any) {
       console.error(`[OmniKB Storage] Failed to write index: ${err?.message || err}`);
     }
