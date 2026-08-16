@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T15:48:08.733Z | **Indexed Files**: 64 | **Total Symbols**: 267 | **Call & Dependency Edges**: 1483
+> **Auto-Updated**: 2026-08-16T16:38:23.164Z | **Indexed Files**: 62 | **Total Symbols**: 220 | **Call & Dependency Edges**: 1334
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `64` |
+| **Source Files** | `62` |
 | **Functions & Methods** | `99` |
 | **Classes & Interfaces** | `48` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `unknown: 7`, `markdown: 13`, `json: 8`, `javascript: 8`, `typescript: 28` |
+| **Languages** | `markdown: 11`, `typescript: 28`, `json: 8`, `javascript: 8`, `unknown: 7` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -20,8 +20,8 @@ The most referenced and interconnected symbols in this repository:
 | :--- | :--- | :--- | :--- | :--- |
 | **`runTests`** | `test/run-tests.js` | **226** | 3 | 223 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
-| **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
 | **`main`** | `src/cli.ts` | **68** | 1 | 67 |
+| **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
 | **`start`** | `src/server/http-server.ts` | **57** | 5 | 52 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
 | **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
@@ -36,62 +36,60 @@ The most referenced and interconnected symbols in this repository:
 ## 4. Module Map & Component Directory
 
 ### `/root` (12 files)
-- **`LICENSE`**: `1 symbols`
-- **`.npmignore`**: `1 symbols`
 - **`KNOWLEDGE_BASE.md`**: `11 symbols`
-- **`SECURITY.md`**: `5 symbols`
-- **`tsconfig.json`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
 - **`README.md`**: `1 symbols`
 - **`.gitignore`**: `1 symbols`
-- **`CONTRIBUTING.md`**: `9 symbols`
-- **`AGENTS.md`**: `15 symbols`
+- **`.npmignore`**: `1 symbols`
+- **`AGENTS.md`**: `1 symbols`
+- **`CHANGELOG.md`**: `1 symbols`
+- **`CONTRIBUTING.md`**: `1 symbols`
+- **`LICENSE`**: `1 symbols`
+- **`SECURITY.md`**: `1 symbols`
 - *(and 2 more files)*
 
-### `/scripts` (10 files)
-- **`scripts/install-startup.vbs`**: `1 symbols`
-- **`scripts/omnikb-silent.vbs`**: `1 symbols`
-- **`scripts/omnikb-startup.bat`**: `1 symbols`
-- **`scripts/omnikb.sh`**: `1 symbols`
-- **`scripts/index-workspace.js`**: `2 symbols`
-- **`scripts/benchmark-tokens.js`**: `2 symbols`
-- **`scripts/supervisor.js`**: `2 symbols`
-- **`scripts/diagnose.js`**: `1 symbols`
-- **`scripts/pre-commit.js`**: `1 symbols`
-- **`scripts/release.js`**: `2 symbols`
-
-### `/examples` (6 files)
-- **`examples/configs/antigravity.mcp.json`**: `1 symbols`
-- **`examples/configs/claude_code.json`**: `1 symbols`
-- **`examples/configs/codex_system_prompt.md`**: `7 symbols`
-- **`examples/configs/cursor.mcp.json`**: `1 symbols`
-- **`examples/configs/opencode.json`**: `1 symbols`
-- **`examples/configs/windsurf.mcp.json`**: `1 symbols`
+### `/docs` (4 files)
+- **`docs/README.md`**: `1 symbols`
+- **`docs/work-log.md`**: `1 symbols`
+- **`docs/roadmap.md`**: `1 symbols`
+- **`docs/release-and-commit-rules.md`**: `1 symbols`
 
 ### `/src` (28 files)
-- **`src/integrations/context7.ts`**: `6 symbols`
 - **`src/core/parser-ts-ast.ts`**: `14 symbols`
 - **`src/core/storage-types.ts`**: `4 symbols`
 - **`src/integrations/graphify.ts`**: `5 symbols`
 - **`src/integrations/index.ts`**: `1 symbols`
 - **`src/integrations/codegraph.ts`**: `5 symbols`
 - **`src/integrations/gitnexus.ts`**: `5 symbols`
-- **`src/core/parsers/python.ts`**: `5 symbols`
-- **`src/core/parsers/go.ts`**: `4 symbols`
-- **`src/core/parsers/rust.ts`**: `4 symbols`
+- **`src/types/index.ts`**: `10 symbols`
+- **`src/core/reporter.ts`**: `4 symbols`
+- **`src/core/storage.ts`**: `16 symbols`
+- **`src/core/watcher.ts`**: `12 symbols`
 - *(and 18 more files)*
 
-### `/docs` (6 files)
-- **`docs/README.md`**: `1 symbols`
-- **`docs/sop-opencode-provider.md`**: `1 symbols`
-- **`docs/skill-library.md`**: `1 symbols`
-- **`docs/release-and-commit-rules.md`**: `11 symbols`
-- **`docs/work-log.md`**: `1 symbols`
-- **`docs/roadmap.md`**: `1 symbols`
+### `/scripts` (10 files)
+- **`scripts/supervisor.js`**: `2 symbols`
+- **`scripts/benchmark-tokens.js`**: `2 symbols`
+- **`scripts/diagnose.js`**: `1 symbols`
+- **`scripts/index-workspace.js`**: `2 symbols`
+- **`scripts/install-startup.vbs`**: `1 symbols`
+- **`scripts/omnikb-silent.vbs`**: `1 symbols`
+- **`scripts/omnikb-startup.bat`**: `1 symbols`
+- **`scripts/omnikb.sh`**: `1 symbols`
+- **`scripts/pre-commit.js`**: `1 symbols`
+- **`scripts/release.js`**: `2 symbols`
 
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
 - **`test/run-tests.js`**: `4 symbols`
+
+### `/examples` (6 files)
+- **`examples/configs/antigravity.mcp.json`**: `1 symbols`
+- **`examples/configs/claude_code.json`**: `1 symbols`
+- **`examples/configs/codex_system_prompt.md`**: `1 symbols`
+- **`examples/configs/cursor.mcp.json`**: `1 symbols`
+- **`examples/configs/opencode.json`**: `1 symbols`
+- **`examples/configs/windsurf.mcp.json`**: `1 symbols`
 
 ## 5. Agent Instructions for Context Retrieval
 
