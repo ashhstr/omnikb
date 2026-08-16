@@ -5,11 +5,12 @@ import * as path from 'path';
 import { GraphEngine } from '../core/graph';
 import { KnowledgeStorage } from '../core/storage';
 import { WorkspaceWatcher } from '../core/watcher';
+import { IKnowledgeStorage } from '../core/storage-types';
 
 export class LocalHttpServer {
   private port: number;
   private graph: GraphEngine;
-  private storage: KnowledgeStorage;
+  private storage: IKnowledgeStorage;
   private watcher: WorkspaceWatcher;
   private workspaceRoot: string;
   private server: http.Server | null = null;
@@ -104,7 +105,10 @@ export class LocalHttpServer {
             if (pathname === '/v1/explore') {
               const query = body.query || '';
               const maxDepth = body.maxDepth || 3;
-              const result = this.graph.explore(query, maxDepth);
+              const result = this.graph.explore(query, maxDepth, {
+                includeFullFile: !!body.includeFullFile,
+                includeImports: !!body.includeImports,
+              });
               this.sendJson(res, 200, result);
               return;
             }

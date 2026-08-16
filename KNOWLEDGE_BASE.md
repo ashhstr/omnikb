@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T06:11:23.319Z | **Indexed Files**: 36 | **Total Symbols**: 208 | **Call & Dependency Edges**: 991
+> **Auto-Updated**: 2026-08-16T10:15:44.301Z | **Indexed Files**: 43 | **Total Symbols**: 200 | **Call & Dependency Edges**: 1012
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `36` |
-| **Functions & Methods** | `79` |
-| **Classes & Interfaces** | `31` |
-| **Web Routes / API Endpoints** | `1` |
-| **Languages** | `json: 8`, `javascript: 2`, `typescript: 14`, `unknown: 7`, `markdown: 5` |
+| **Source Files** | `43` |
+| **Functions & Methods** | `95` |
+| **Classes & Interfaces** | `36` |
+| **Web Routes / API Endpoints** | `0` |
+| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 2`, `typescript: 16` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,65 +18,66 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls |
 | :--- | :--- | :--- | :--- | :--- |
-| **`generateHtmlVisualizer`** | `src/core/reporter.ts` | **52** | 8 | 44 |
-| **`runTests`** | `test/run-tests.js` | **48** | 4 | 44 |
-| **`main`** | `src/cli.ts` | **37** | 6 | 31 |
-| **`start`** | `src/server/http-server.ts` | **32** | 6 | 26 |
-| **`generateMarkdownReport`** | `src/core/reporter.ts` | **28** | 8 | 20 |
-| **`processPendingChanges`** | `src/core/watcher.ts` | **25** | 4 | 21 |
-| **`parseFile`** | `src/core/parser.ts` | **24** | 8 | 16 |
-| **`search`** | `src/core/storage.ts` | **24** | 9 | 15 |
-
-## 3. Web & API Route Registry
-
-| HTTP Method & Route | File Definition |
-| :--- | :--- |
-| `GET /api/users/:id` | `test/run-tests.js:43` |
+| **`runTests`** | `test/run-tests.js` | **121** | 3 | 118 |
+| **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
+| **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
+| **`start`** | `src/server/http-server.ts` | **44** | 4 | 40 |
+| **`initialScan`** | `src/core/watcher.ts` | **26** | 8 | 18 |
+| **`switchWorkspace`** | `src/server/mcp-server.ts` | **23** | 7 | 16 |
+| **`parseFile`** | `src/core/parser.ts` | **22** | 10 | 12 |
+| **`processPendingChanges`** | `src/core/watcher.ts` | **22** | 4 | 18 |
 
 ## 4. Module Map & Component Directory
 
 ### `/root` (10 files)
-- **`package-lock.json`**: `1 symbols`
-- **`tsconfig.json`**: `1 symbols`
-- **`.gitignore`**: `1 symbols`
 - **`LICENSE`**: `1 symbols`
 - **`.npmignore`**: `1 symbols`
-- **`package.json`**: `1 symbols`
-- **`CONTRIBUTING.md`**: `6 symbols`
+- **`KNOWLEDGE_BASE.md`**: `11 symbols`
 - **`SECURITY.md`**: `5 symbols`
-- **`README.md`**: `36 symbols`
-- **`KNOWLEDGE_BASE.md`**: `12 symbols`
+- **`tsconfig.json`**: `1 symbols`
+- **`CONTRIBUTING.md`**: `1 symbols`
+- **`README.md`**: `1 symbols`
+- **`package.json`**: `1 symbols`
+- **`.gitignore`**: `1 symbols`
+- **`package-lock.json`**: `1 symbols`
 
 ### `/scripts` (5 files)
-- **`scripts/index-workspace.js`**: `2 symbols`
 - **`scripts/install-startup.vbs`**: `1 symbols`
 - **`scripts/omnikb-silent.vbs`**: `1 symbols`
 - **`scripts/omnikb-startup.bat`**: `1 symbols`
 - **`scripts/omnikb.sh`**: `1 symbols`
-
-### `/src` (14 files)
-- **`src/cli.ts`**: `4 symbols`
-- **`src/core/graph.ts`**: `7 symbols`
-- **`src/core/parser.ts`**: `23 symbols`
-- **`src/core/reporter.ts`**: `7 symbols`
-- **`src/core/storage.ts`**: `16 symbols`
-- **`src/core/watcher.ts`**: `11 symbols`
-- **`src/integrations/codegraph.ts`**: `6 symbols`
-- **`src/integrations/context7.ts`**: `6 symbols`
-- **`src/integrations/gitnexus.ts`**: `5 symbols`
-- **`src/integrations/graphify.ts`**: `5 symbols`
-- *(and 4 more files)*
-
-### `/test` (1 files)
-- **`test/run-tests.js`**: `10 symbols`
+- **`scripts/index-workspace.js`**: `2 symbols`
 
 ### `/examples` (6 files)
 - **`examples/configs/antigravity.mcp.json`**: `1 symbols`
 - **`examples/configs/claude_code.json`**: `1 symbols`
-- **`examples/configs/opencode.json`**: `1 symbols`
-- **`examples/configs/cursor.mcp.json`**: `1 symbols`
-- **`examples/configs/windsurf.mcp.json`**: `1 symbols`
 - **`examples/configs/codex_system_prompt.md`**: `7 symbols`
+- **`examples/configs/cursor.mcp.json`**: `1 symbols`
+- **`examples/configs/opencode.json`**: `1 symbols`
+- **`examples/configs/windsurf.mcp.json`**: `1 symbols`
+
+### `/src` (16 files)
+- **`src/integrations/context7.ts`**: `6 symbols`
+- **`src/integrations/gitnexus.ts`**: `5 symbols`
+- **`src/cli.ts`**: `18 symbols`
+- **`src/core/graph.ts`**: `8 symbols`
+- **`src/core/parser-ts-ast.ts`**: `14 symbols`
+- **`src/core/parser.ts`**: `18 symbols`
+- **`src/core/reporter.ts`**: `8 symbols`
+- **`src/core/storage-types.ts`**: `4 symbols`
+- **`src/core/storage.ts`**: `17 symbols`
+- **`src/core/watcher.ts`**: `11 symbols`
+- *(and 6 more files)*
+
+### `/docs` (5 files)
+- **`docs/README.md`**: `1 symbols`
+- **`docs/roadmap.md`**: `1 symbols`
+- **`docs/sop-opencode-provider.md`**: `1 symbols`
+- **`docs/skill-library.md`**: `7 symbols`
+- **`docs/work-log.md`**: `1 symbols`
+
+### `/test` (1 files)
+- **`test/run-tests.js`**: `2 symbols`
 
 ## 5. Agent Instructions for Context Retrieval
 

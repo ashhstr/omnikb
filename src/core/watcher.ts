@@ -5,11 +5,12 @@ import { CodeParser } from './parser';
 import { KnowledgeStorage } from './storage';
 import { GraphEngine } from './graph';
 import { KnowledgeReporter } from './reporter';
+import { IKnowledgeStorage } from './storage-types';
 
 export class WorkspaceWatcher {
   private config: WatcherConfig;
   private parser: CodeParser;
-  private storage: KnowledgeStorage;
+  private storage: IKnowledgeStorage;
   private graph: GraphEngine;
   private reporter: KnowledgeReporter;
 
@@ -41,6 +42,7 @@ export class WorkspaceWatcher {
         '.cache',
         '*.tmp',
         '*.log',
+        'KNOWLEDGE_BASE.md',
       ],
       ...config,
     };

@@ -42,7 +42,7 @@ class KnowledgeStorage {
     nodes = new Map();
     edges = new Map();
     files = new Map();
-    // Inverted indexes for instant retrieval
+    // Inverted indexes for instant retrieval (internal implementation detail)
     symbolIndex = new Map(); // SymbolName -> Set of Node IDs
     fileNodesIndex = new Map(); // FilePath -> Set of Node IDs
     fileEdgesIndex = new Map(); // FilePath -> Set of Edge IDs
@@ -224,6 +224,12 @@ class KnowledgeStorage {
         return Array.from(nodeIds)
             .map((id) => this.nodes.get(id))
             .filter((n) => n !== undefined);
+    }
+    /**
+     * Number of code nodes contained within a file (read-only view)
+     */
+    getFileNodeCount(filePath) {
+        return this.fileNodesIndex.get(filePath)?.size || 0;
     }
     insertNodeInMemory(node) {
         this.nodes.set(node.id, node);

@@ -6,6 +6,7 @@ import { KnowledgeStorage } from '../core/storage';
 import { WorkspaceWatcher } from '../core/watcher';
 import { CodeParser } from '../core/parser';
 import { KnowledgeReporter } from '../core/reporter';
+import { IKnowledgeStorage } from '../core/storage-types';
 
 export interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -28,7 +29,7 @@ export interface JsonRpcResponse {
 export class McpServer {
   private workspaceRoot: string;
   private parser: CodeParser;
-  private storage: KnowledgeStorage;
+  private storage: IKnowledgeStorage;
   private graph: GraphEngine;
   private reporter: KnowledgeReporter;
   private watcher: WorkspaceWatcher;
@@ -87,11 +88,12 @@ export class McpServer {
 
     // 2. Re-initialize storage, graph, reporter for the new directory
     this.workspaceRoot = norm;
-    this.storage = new KnowledgeStorage(norm);
-    await this.storage.init();
+    const newStorage = new KnowledgeStorage(norm);
+    await newStorage.init();
+    this.storage = newStorage;
 
-    this.graph = new GraphEngine(norm, this.storage);
-    this.reporter = new KnowledgeReporter(norm, this.storage, this.graph);
+    this.graph = new GraphEngine(norm, newStorage);
+    this.reporter = new KnowledgeReporter(norm, newStorage, this.graph);
     this.watcher = new WorkspaceWatcher(
       {
         rootPath: norm,
@@ -100,7 +102,7 @@ export class McpServer {
         autoGenerateVisual: true,
       },
       this.parser,
-      this.storage,
+      newStorage,
       this.graph,
       this.reporter
     );
@@ -230,6 +232,14 @@ The index auto-syncs continuously on every file change.`,
                       type: 'number',
                       description: 'Maximum depth for call graph and impact traversal (default: 3).',
                     },
+                    includeFullFile: {
+                      type: 'boolean',
+                      description: 'When true, returns the entire verbatim source code file containing the target symbol (eliminates compaction context loss).',
+                    },
+                    includeImports: {
+                      type: 'boolean',
+                      description: 'When true, returns all module imports and imported symbols for the target file.',
+                    },
                   },
                   required: ['query'],
                 },
@@ -314,7 +324,10 @@ The index auto-syncs continuously on every file change.`,
           let outputText = '';
 
           if (toolName === 'kb_explore') {
-            const res = this.graph.explore(args.query, args.maxDepth || 3);
+            const res = this.graph.explore(args.query, args.maxDepth || 3, {
+              includeFullFile: args.includeFullFile,
+              includeImports: args.includeImports,
+            });
             outputText = JSON.stringify(res, null, 2);
           } else if (toolName === 'kb_impact') {
             const res = this.graph.calculateImpact(args.target, args.maxDepth || 5);

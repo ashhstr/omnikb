@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CodeNode, CodeEdge, FileMetadata, SearchResult } from '../types';
+import { IKnowledgeStorage, IKnowledgeIndexReader } from './storage-types';
 
 export interface StorageDump {
   version: number;
@@ -10,19 +11,19 @@ export interface StorageDump {
   edges: CodeEdge[];
 }
 
-export class KnowledgeStorage {
+export class KnowledgeStorage implements IKnowledgeStorage, IKnowledgeIndexReader {
   private dbDir: string;
   private dbFilePath: string;
 
-  public nodes: Map<string, CodeNode> = new Map();
-  public edges: Map<string, CodeEdge> = new Map();
-  public files: Map<string, FileMetadata> = new Map();
+  public readonly nodes: Map<string, CodeNode> = new Map();
+  public readonly edges: Map<string, CodeEdge> = new Map();
+  public readonly files: Map<string, FileMetadata> = new Map();
 
-  // Inverted indexes for instant retrieval
-  public symbolIndex: Map<string, Set<string>> = new Map(); // SymbolName -> Set of Node IDs
-  public fileNodesIndex: Map<string, Set<string>> = new Map(); // FilePath -> Set of Node IDs
-  public fileEdgesIndex: Map<string, Set<string>> = new Map(); // FilePath -> Set of Edge IDs
-  public tokenIndex: Map<string, Set<string>> = new Map(); // Token -> Set of Node IDs
+  // Inverted indexes for instant retrieval (internal implementation detail)
+  private symbolIndex: Map<string, Set<string>> = new Map(); // SymbolName -> Set of Node IDs
+  private fileNodesIndex: Map<string, Set<string>> = new Map(); // FilePath -> Set of Node IDs
+  private fileEdgesIndex: Map<string, Set<string>> = new Map(); // FilePath -> Set of Edge IDs
+  private tokenIndex: Map<string, Set<string>> = new Map(); // Token -> Set of Node IDs
 
   constructor(workspaceRoot: string) {
     this.dbDir = path.join(workspaceRoot, '.omnikb');
@@ -226,6 +227,13 @@ export class KnowledgeStorage {
     return Array.from(nodeIds)
       .map((id) => this.nodes.get(id))
       .filter((n): n is CodeNode => n !== undefined);
+  }
+
+  /**
+   * Number of code nodes contained within a file (read-only view)
+   */
+  public getFileNodeCount(filePath: string): number {
+    return this.fileNodesIndex.get(filePath)?.size || 0;
   }
 
   private insertNodeInMemory(node: CodeNode): void {

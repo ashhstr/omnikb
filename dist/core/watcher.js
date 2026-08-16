@@ -64,6 +64,7 @@ class WorkspaceWatcher {
                 '.cache',
                 '*.tmp',
                 '*.log',
+                'KNOWLEDGE_BASE.md',
             ],
             ...config,
         };

@@ -121,7 +121,10 @@ class LocalHttpServer {
                         if (pathname === '/v1/explore') {
                             const query = body.query || '';
                             const maxDepth = body.maxDepth || 3;
-                            const result = this.graph.explore(query, maxDepth);
+                            const result = this.graph.explore(query, maxDepth, {
+                                includeFullFile: !!body.includeFullFile,
+                                includeImports: !!body.includeImports,
+                            });
                             this.sendJson(res, 200, result);
                             return;
                         }
