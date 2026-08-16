@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T14:48:08.688Z | **Indexed Files**: 55 | **Total Symbols**: 212 | **Call & Dependency Edges**: 1228
+> **Auto-Updated**: 2026-08-16T15:01:41.779Z | **Indexed Files**: 56 | **Total Symbols**: 221 | **Call & Dependency Edges**: 1270
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `55` |
+| **Source Files** | `56` |
 | **Functions & Methods** | `86` |
 | **Classes & Interfaces** | `42` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 8`, `typescript: 22` |
+| **Languages** | `unknown: 7`, `markdown: 11`, `json: 8`, `javascript: 8`, `typescript: 22` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -21,7 +21,7 @@ The most referenced and interconnected symbols in this repository:
 | **`runTests`** | `test/run-tests.js` | **164** | 3 | 161 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
 | **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
-| **`main`** | `src/cli.ts` | **67** | 1 | 66 |
+| **`main`** | `src/cli.ts` | **68** | 2 | 66 |
 | **`start`** | `src/server/http-server.ts` | **50** | 5 | 45 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
 | **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
@@ -80,12 +80,13 @@ The most referenced and interconnected symbols in this repository:
 - **`src/core/parsers/python.ts`**: `5 symbols`
 - *(and 12 more files)*
 
-### `/docs` (5 files)
+### `/docs` (6 files)
 - **`docs/README.md`**: `1 symbols`
 - **`docs/sop-opencode-provider.md`**: `1 symbols`
 - **`docs/roadmap.md`**: `1 symbols`
 - **`docs/skill-library.md`**: `1 symbols`
 - **`docs/work-log.md`**: `1 symbols`
+- **`docs/ENGINEERING_STANDARDS.md`**: `9 symbols`
 
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
