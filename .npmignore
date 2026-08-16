@@ -1,0 +1,12 @@
+src/
+test/
+scripts/
+examples/
+.omnikb/
+.git/
+.github/
+.gitignore
+*.log
+logs/
+tsconfig.json
+KNOWLEDGE_BASE.md
