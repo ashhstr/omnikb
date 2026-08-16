@@ -95,8 +95,7 @@ flowchart TD
 | **Symbol & Interface Lookup** | ~20,000 tokens (broad search) | ~230 tokens (inverted index match) | **~97.5% Saved** |
 | **Average 1 Coding Session** | **~120,000 tokens** | **~10,000 tokens** | **~91.6% Saved** |
 
-<details>
-<summary>🧪 <b>Reproduce the Benchmark Locally (Click to Expand)</b></summary>
+### 🧪 Reproducible Live Benchmark Audit
 
 You can verify and reproduce these token reduction metrics on your own machine using the built-in benchmark script:
 
@@ -141,7 +140,6 @@ Overall Net Tokens Saved          : ~42,562 tokens
 AVERAGE EMPIRICAL REDUCTION RATE  : 82.37% - 97.48%
 ========================================================================
 ```
-</details>
 
 ---
 
