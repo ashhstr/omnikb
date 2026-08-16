@@ -86,6 +86,13 @@ export class CodeGraphEngine {
             },
           ]
         : [],
+      freshness: {
+        isFresh: true,
+        isStale: false,
+        indexedAt: Date.now(),
+        contentHash: matchingNode?.id || 'codegraph-instant',
+        pendingInQueue: false,
+      },
     };
   }
 

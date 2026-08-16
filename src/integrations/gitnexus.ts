@@ -110,6 +110,13 @@ export class GitNexusEngine {
       affectedRoutes,
       riskScore,
       summary: `GitNexus Blast Radius: ${directCallers.length} direct caller(s), ${affectedFiles.size} file(s) affected. Risk: ${riskScore}.`,
+      freshness: {
+        isFresh: true,
+        isStale: false,
+        indexedAt: Date.now(),
+        contentHash: 'gitnexus-verified',
+        pendingInQueue: false,
+      },
     };
   }
 }

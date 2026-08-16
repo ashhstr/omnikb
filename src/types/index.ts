@@ -71,9 +71,14 @@ export interface GraphStats {
   lastSyncTime: number;
 }
 
-export interface ExploreOptions {
-  includeFullFile?: boolean;
-  includeImports?: boolean;
+export interface FreshnessMetadata {
+  isFresh: boolean;
+  indexedAt: number;
+  diskLastModified?: number;
+  contentHash: string;
+  isStale: boolean;
+  staleReason?: 'file_modified_on_disk' | 'file_deleted' | 'pending_in_queue';
+  pendingInQueue: boolean;
 }
 
 export interface ExploreResult {
@@ -97,24 +102,9 @@ export interface ExploreResult {
     endLine: number;
     lines: Array<{ lineNumber: number; content: string }>;
   }>;
-  fullFileSource?: Array<{
-    filePath: string;
-    content: string;
-    lineCount: number;
-  }>;
-  importedSymbols?: Array<{
-    sourceFile: string;
-    importedFile: string;
-    symbols: string[];
-  }>;
   relatedDocs?: CodeNode[];
   stalenessWarning?: string;
-}
-
-export interface ReporterOptions {
-  maxGodNodes?: number;
-  maxFilesPerModule?: number;
-  renderFullTree?: boolean;
+  freshness: FreshnessMetadata;
 }
 
 export interface ImpactAnalysis {
@@ -126,6 +116,7 @@ export interface ImpactAnalysis {
   affectedRoutes: CodeNode[];
   riskScore: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   summary: string;
+  freshness: FreshnessMetadata;
 }
 
 export interface SearchResult {
@@ -141,7 +132,5 @@ export interface WatcherConfig {
   ignorePatterns?: string[];
   autoGenerateReport?: boolean;
   autoGenerateVisual?: boolean;
-  reporterOptions?: ReporterOptions;
   onSyncComplete?: (stats: GraphStats) => void;
 }
-
