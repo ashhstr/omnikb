@@ -7,6 +7,8 @@ export interface ParseResult {
     contentHash: string;
 }
 export declare class CodeParser {
+    private parsers;
+    constructor();
     /**
      * Detects programming language from file extension
      */
@@ -19,36 +21,4 @@ export declare class CodeParser {
      * Main parsing entrypoint for any supported file
      */
     parseFile(relativeFilePath: string, content: string): ParseResult;
-    /**
-     * TypeScript & JavaScript AST & structural extraction
-     */
-    private parseTypeScriptOrJavaScript;
-    /**
-     * Python structural extraction
-     */
-    private parsePython;
-    /**
-     * Go structural extraction
-     */
-    private parseGo;
-    /**
-     * Rust structural extraction
-     */
-    private parseRust;
-    /**
-     * Markdown documentation indexing (connecting docs with code entities)
-     */
-    private parseMarkdown;
-    /**
-     * Generic C-Style language parser (Java, C#, C++)
-     */
-    private parseCStyleGeneric;
-    private parseGenericText;
-    /**
-     * Helper: Extracts function calls from a function's code body
-     */
-    private extractCallsFromBody;
-    private getLineNumber;
-    private findMatchingBracketEndLine;
-    private findPythonBlockEndLine;
 }

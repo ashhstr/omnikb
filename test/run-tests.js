@@ -22,10 +22,11 @@ async function runTests() {
   fs.mkdirSync(testWorkspace, { recursive: true });
 
   try {
-    // 1. Test CodeParser on TypeScript and Python
-    console.log('1. Testing CodeParser...');
+    // 1. Test CodeParser on TypeScript, Python, Go, and Rust
+    console.log('1. Testing CodeParser across multiple languages...');
     const parser = new CodeParser();
 
+    // 1.1 TypeScript
     const tsCode = `
 import { db } from './database';
 
@@ -53,6 +54,7 @@ app.get('/api/users/:id', getUserHandler);
     assert.ok(tsResult.edges.some((e) => e.kind === 'calls'));
     console.log('   ✅ TypeScript parsing passed.');
 
+    // 1.2 Python
     const pyCode = `
 from app.db import Database
 
@@ -75,6 +77,69 @@ def login_route():
     assert.ok(pyResult.nodes.some((n) => n.name === 'authenticate' && n.kind === 'function'));
     assert.ok(pyResult.nodes.some((n) => n.name === 'verify_hash' && n.kind === 'function'));
     console.log('   ✅ Python parsing passed.');
+
+    // 1.3 Go
+    const goCode = `
+package server
+
+import (
+  "net/http"
+  "fmt"
+)
+
+type Server struct {
+  port int
+}
+
+type Router interface {
+  Handle(pattern string)
+}
+
+func (s *Server) Start() error {
+  fmt.Println(s.port)
+  return nil
+}
+
+func NewServer(port int) *Server {
+  return &Server{port: port}
+}
+`;
+    const goResult = parser.parseFile('pkg/server/server.go', goCode);
+    assert.strictEqual(goResult.language, 'go');
+    assert.ok(goResult.nodes.some((n) => n.name === 'Server' && n.kind === 'class'));
+    assert.ok(goResult.nodes.some((n) => n.name === 'Router' && n.kind === 'interface'));
+    assert.ok(goResult.nodes.some((n) => n.name === 'Server.Start' && n.kind === 'method'));
+    assert.ok(goResult.nodes.some((n) => n.name === 'NewServer' && n.kind === 'function'));
+    assert.ok(goResult.edges.some((e) => e.kind === 'imports'));
+    console.log('   ✅ Go parsing passed.');
+
+    // 1.4 Rust
+    const rustCode = `
+use std::sync::Arc;
+
+pub struct Engine {
+    id: String,
+}
+
+pub trait Runner {
+    fn execute(&self);
+}
+
+impl Runner for Engine {
+    fn execute(&self) {}
+}
+
+pub fn run_engine(e: &Engine) {
+    e.execute();
+}
+`;
+    const rustResult = parser.parseFile('src/engine.rs', rustCode);
+    assert.strictEqual(rustResult.language, 'rust');
+    assert.ok(rustResult.nodes.some((n) => n.name === 'Engine' && n.kind === 'class'));
+    assert.ok(rustResult.nodes.some((n) => n.name === 'Runner' && n.kind === 'interface'));
+    assert.ok(rustResult.nodes.some((n) => n.name === 'run_engine' && n.kind === 'function'));
+    assert.ok(rustResult.edges.some((e) => e.kind === 'implements'));
+    console.log('   ✅ Rust parsing passed.');
 
     // 2. Test Storage and Inverted Search Index
     console.log('2. Testing KnowledgeStorage & Inverted Index...');
@@ -111,13 +176,28 @@ def login_route():
       pyResult.edges
     );
 
+    storage.updateFileGraph(
+      'pkg/server/server.go',
+      {
+        path: 'pkg/server/server.go',
+        hash: goResult.contentHash,
+        size: 450,
+        lastModified: Date.now(),
+        language: 'go',
+        nodeCount: goResult.nodes.length,
+        edgeCount: goResult.edges.length,
+      },
+      goResult.nodes,
+      goResult.edges
+    );
+
     const searchRes = storage.search('formatUser', 5);
     assert.ok(searchRes.length > 0, 'Search for formatUser should return results');
     assert.strictEqual(searchRes[0].nodes[0].name, 'formatUser');
     console.log('   ✅ Storage & Symbol search passed.');
 
-    // 3. Test GraphEngine & Blast Radius
-    console.log('3. Testing GraphEngine & Impact Analysis...');
+    // 3. Test GraphEngine & PageRank Centrality
+    console.log('3. Testing GraphEngine & PageRank Centrality...');
     const graph = new GraphEngine(testWorkspace, storage);
     graph.resolveCrossFileReferences();
 
@@ -128,7 +208,11 @@ def login_route():
     const impact = graph.calculateImpact('formatUser', 5);
     assert.ok(impact.riskScore, 'Risk score must be computed');
     assert.ok(impact.summary.includes('formatUser'));
-    console.log('   ✅ Graph explore & Impact calculation passed.');
+
+    const stats = graph.getStats();
+    assert.ok(stats.godNodes.length > 0, 'God Nodes list should not be empty');
+    assert.ok(typeof stats.godNodes[0].pageRank === 'number', 'PageRank score should be calculated');
+    console.log('   ✅ Graph explore, Impact calculation, and PageRank Centrality passed.');
 
     // 4. Test KnowledgeReporter (Markdown + Visualizer)
     console.log('4. Testing KnowledgeReporter...');
@@ -172,7 +256,6 @@ def login_route():
     fs.mkdirSync(path.dirname(diskUserPath), { recursive: true });
     fs.writeFileSync(diskUserPath, modifiedTsCode, 'utf8');
 
-    // Update storage lastModified to match disk
     const diskStats = fs.statSync(diskUserPath);
     storage.files.get('src/services/user.ts').lastModified = diskStats.mtimeMs;
     storage.files.get('src/services/user.ts').hash = CodeParser.computeHash(modifiedTsCode);
@@ -185,7 +268,6 @@ def login_route():
 
     // Simulate disk file change behind the back of the index
     fs.writeFileSync(diskUserPath, modifiedTsCode + '\n// Changed directly on disk without indexing', 'utf8');
-    // Bump mtime
     const futureTime = new Date(Date.now() + 2000);
     fs.utimesSync(diskUserPath, futureTime, futureTime);
 
@@ -196,8 +278,8 @@ def login_route():
     assert.ok(staleExplore.stalenessWarning, 'Staleness warning string must be generated');
     console.log('   ✅ Atomic staleness detection passed.');
 
-    // 7. Test Active Reconciliation (kb_sync / forceReconcile)
-    console.log('7. Testing Active Reconciliation (forceReconcile & kb_sync)...');
+    // 7. Test Active Reconciliation & MCP Tools (kb_sync & kb_god_nodes)
+    console.log('7. Testing Active Reconciliation & MCP Server Tools...');
     const watcher = new WorkspaceWatcher(
       { rootPath: testWorkspace, autoGenerateReport: false, autoGenerateVisual: false },
       parser,
@@ -213,10 +295,12 @@ def login_route():
     assert.strictEqual(reconciledExplore.freshness.isFresh, true, 'File must return to fresh state after reconcile');
     assert.strictEqual(reconciledExplore.freshness.isStale, false);
 
-    // Test MCP Server kb_sync tool call
+    // Test MCP Server kb_sync & kb_god_nodes
     const { McpServer } = require('../dist/server/mcp-server');
     const mcpServer = new McpServer(graph, storage, watcher);
-    const rpcResponse = await mcpServer.handleRequest({
+    
+    // 7.1 kb_sync
+    const syncRes = await mcpServer.handleRequest({
       jsonrpc: '2.0',
       id: 'test-sync-1',
       method: 'tools/call',
@@ -225,14 +309,27 @@ def login_route():
         arguments: { force: true },
       },
     });
+    assert.strictEqual(syncRes.id, 'test-sync-1');
+    assert.ok(syncRes.result && syncRes.result.content);
+    const parsedSyncOut = JSON.parse(syncRes.result.content[0].text);
+    assert.strictEqual(parsedSyncOut.success, true);
 
-    assert.strictEqual(rpcResponse.id, 'test-sync-1');
-    assert.ok(rpcResponse.result && rpcResponse.result.content);
-    const parsedMcpOut = JSON.parse(rpcResponse.result.content[0].text);
-    assert.strictEqual(parsedMcpOut.success, true);
-    console.log('   ✅ Active reconciliation and MCP kb_sync passed.');
+    // 7.2 kb_god_nodes
+    const godNodesRes = await mcpServer.handleRequest({
+      jsonrpc: '2.0',
+      id: 'test-godnodes-1',
+      method: 'tools/call',
+      params: {
+        name: 'kb_god_nodes',
+        arguments: { limit: 5 },
+      },
+    });
+    assert.strictEqual(godNodesRes.id, 'test-godnodes-1');
+    const parsedGodOut = JSON.parse(godNodesRes.result.content[0].text);
+    assert.ok(Array.isArray(parsedGodOut.godNodes));
+    console.log('   ✅ Active reconciliation and MCP kb_sync & kb_god_nodes passed.');
 
-    console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! 100% Freshness Guarantee is verified.\n');
+    console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! 100% Freshness Guarantee & Multi-Language Parsers verified.\n');
   } finally {
     if (fs.existsSync(testWorkspace)) {
       fs.rmSync(testWorkspace, { recursive: true, force: true });

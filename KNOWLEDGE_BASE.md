@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T13:48:34.965Z | **Indexed Files**: 46 | **Total Symbols**: 180 | **Call & Dependency Edges**: 1066
+> **Auto-Updated**: 2026-08-16T14:26:29.139Z | **Indexed Files**: 56 | **Total Symbols**: 203 | **Call & Dependency Edges**: 1176
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `46` |
-| **Functions & Methods** | `80` |
-| **Classes & Interfaces** | `33` |
+| **Source Files** | `56` |
+| **Functions & Methods** | `84` |
+| **Classes & Interfaces** | `42` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 5`, `typescript: 16` |
+| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 8`, `typescript: 22`, `yaml: 1` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,20 +18,20 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls |
 | :--- | :--- | :--- | :--- | :--- |
-| **`runTests`** | `test/run-tests.js` | **108** | 3 | 105 |
+| **`runTests`** | `test/run-tests.js` | **142** | 3 | 139 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
 | **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
 | **`main`** | `src/cli.ts` | **67** | 1 | 66 |
-| **`start`** | `src/server/http-server.ts` | **46** | 4 | 42 |
+| **`start`** | `src/server/http-server.ts` | **48** | 4 | 44 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
 | **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
-| **`initialScan`** | `src/core/watcher.ts` | **26** | 8 | 18 |
+| **`initialScan`** | `src/core/watcher.ts` | **29** | 8 | 21 |
 
 ## 3. Web & API Route Registry
 
 | HTTP Method & Route | File Definition |
 | :--- | :--- |
-| `GET src/services/user.ts` | `test/run-tests.js:177` |
+| `GET src/services/user.ts` | `test/run-tests.js:260` |
 
 ## 4. Module Map & Component Directory
 
@@ -43,11 +43,11 @@ The most referenced and interconnected symbols in this repository:
 - **`tsconfig.json`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
-- **`.gitignore`**: `1 symbols`
-- **`README.md`**: `1 symbols`
 - **`package.json`**: `1 symbols`
+- **`README.md`**: `1 symbols`
+- **`.gitignore`**: `1 symbols`
 
-### `/scripts` (7 files)
+### `/scripts` (10 files)
 - **`scripts/install-startup.vbs`**: `1 symbols`
 - **`scripts/omnikb-silent.vbs`**: `1 symbols`
 - **`scripts/omnikb-startup.bat`**: `1 symbols`
@@ -55,6 +55,9 @@ The most referenced and interconnected symbols in this repository:
 - **`scripts/index-workspace.js`**: `2 symbols`
 - **`scripts/benchmark-tokens.js`**: `2 symbols`
 - **`scripts/supervisor.js`**: `2 symbols`
+- **`scripts/diagnose.js`**: `1 symbols`
+- **`scripts/release.js`**: `1 symbols`
+- **`scripts/pre-commit.js`**: `1 symbols`
 
 ### `/examples` (6 files)
 - **`examples/configs/antigravity.mcp.json`**: `1 symbols`
@@ -64,18 +67,18 @@ The most referenced and interconnected symbols in this repository:
 - **`examples/configs/opencode.json`**: `1 symbols`
 - **`examples/configs/windsurf.mcp.json`**: `1 symbols`
 
-### `/src` (16 files)
+### `/src` (22 files)
 - **`src/integrations/context7.ts`**: `6 symbols`
 - **`src/core/parser-ts-ast.ts`**: `14 symbols`
 - **`src/core/storage-types.ts`**: `4 symbols`
 - **`src/integrations/graphify.ts`**: `5 symbols`
 - **`src/integrations/index.ts`**: `1 symbols`
-- **`src/core/graph.ts`**: `8 symbols`
-- **`src/core/parser.ts`**: `17 symbols`
-- **`src/core/reporter.ts`**: `4 symbols`
-- **`src/core/storage.ts`**: `16 symbols`
-- **`src/core/watcher.ts`**: `12 symbols`
-- *(and 6 more files)*
+- **`src/integrations/codegraph.ts`**: `5 symbols`
+- **`src/integrations/gitnexus.ts`**: `5 symbols`
+- **`src/cli.ts`**: `3 symbols`
+- **`src/core/parsers/types.ts`**: `7 symbols`
+- **`src/core/parsers/python.ts`**: `5 symbols`
+- *(and 12 more files)*
 
 ### `/docs` (5 files)
 - **`docs/README.md`**: `1 symbols`
@@ -87,6 +90,9 @@ The most referenced and interconnected symbols in this repository:
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
 - **`test/run-tests.js`**: `3 symbols`
+
+### `/.github` (1 files)
+- **`.github/workflows/ci.yml`**: `1 symbols`
 
 ## 5. Agent Instructions for Context Retrieval
 

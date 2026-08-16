@@ -1,7 +1,74 @@
+# Dependencies
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build & Compiled Output
 dist/
+build/
+out/
+*.tsbuildinfo
+
+# Local OmniKB Knowledge Engine & State
 .omnikb/
 KNOWLEDGE_BASE.md
-*.tmp
+test/sandbox/
+scratch/
+
+# Environment, Secrets & Private Config
+.env
+.env.*
+*.env
+!*.env.example
+*.local
+*.secret
+*.secrets
+*token*
+*credential*
+credentials.json
+service-account*.json
+.npmrc
+.pypirc
+
+# Private Keys, Certificates & Security Credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.pkcs12
+*.cer
+*.crt
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.pub
+
+# Logs & Debug Dumps
 *.log
-package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.heapsnapshot
+
+# Database & SQLite files
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary & Cache Files
+*.tmp
+*.temp
+.cache/
+.eslintcache
+
+# OS & Editor Metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo

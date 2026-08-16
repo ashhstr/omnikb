@@ -67,7 +67,7 @@ export interface GraphStats {
   nodesByKind: Record<NodeKind, number>;
   edgesByKind: Record<EdgeKind, number>;
   languages: Record<string, number>;
-  godNodes: Array<{ id: string; name: string; filePath: string; degree: number; inDegree: number; outDegree: number }>;
+  godNodes: Array<{ id: string; name: string; filePath: string; degree: number; inDegree: number; outDegree: number; pageRank?: number }>;
   lastSyncTime: number;
 }
 

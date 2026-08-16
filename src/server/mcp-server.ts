@@ -163,6 +163,20 @@ The index auto-syncs continuously on every save.`,
                 },
               },
               {
+                name: 'kb_god_nodes',
+                description:
+                  'Returns top architectural God Nodes and coupled hubs ranked by PageRank centrality and degree connectivity.',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    limit: {
+                      type: 'number',
+                      description: 'Number of top god nodes to return (default: 10).',
+                    },
+                  },
+                },
+              },
+              {
                 name: 'kb_status',
                 description: 'Returns real-time sync status, watched files, and pending queue.',
                 inputSchema: {
@@ -207,6 +221,10 @@ The index auto-syncs continuously on every save.`,
           } else if (toolName === 'kb_architecture') {
             const stats = this.graph.getStats();
             outputText = JSON.stringify(stats, null, 2);
+          } else if (toolName === 'kb_god_nodes') {
+            const stats = this.graph.getStats();
+            const limit = args.limit || 10;
+            outputText = JSON.stringify({ godNodes: stats.godNodes.slice(0, limit) }, null, 2);
           } else if (toolName === 'kb_status') {
             const stats = this.graph.getStats();
             const pending = this.watcher.getPendingQueue();

@@ -125,6 +125,15 @@ export class LocalHttpServer {
               return;
             }
 
+            if (pathname === '/v1/god-nodes') {
+              const limit = body.limit || 10;
+              const stats = this.graph.getStats();
+              this.sendJson(res, 200, {
+                godNodes: stats.godNodes.slice(0, limit),
+              });
+              return;
+            }
+
             if (pathname === '/v1/sync') {
               const stats = await this.watcher.forceReconcile();
               this.sendJson(res, 200, {

@@ -10,7 +10,11 @@
     "build": "tsc",
     "watch": "tsc -w",
     "start": "node dist/cli.js",
-    "test": "node test/run-tests.js"
+    "test": "node test/run-tests.js",
+    "diagnose": "node scripts/diagnose.js",
+    "release": "node scripts/release.js",
+    "precommit": "node scripts/pre-commit.js",
+    "benchmark-tokens": "node test/benchmark-token-savings.js"
   },
   "keywords": [
     "knowledge-base",

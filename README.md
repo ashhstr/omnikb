@@ -109,61 +109,60 @@ Add to your MCP configuration (`mcp.json` / `settings.json`):
 - `kb_impact(target, maxDepth)`: Blast radius & change risk analysis for refactoring.
 - `kb_search(query, limit)`: Inverted index fast symbol & keyword search.
 - `kb_architecture()`: Repository-level metrics, God Nodes, and route maps.
+- `kb_god_nodes(limit)`: Top architectural God Nodes and coupled hubs ranked by PageRank centrality.
 - `kb_status()`: Real-time file watcher status and pending sync queue.
 - `kb_sync(force)`: Forces atomic workspace reconciliation for a 100% freshness guarantee.
 
----
-
-## 🔌 Local REST API Integration (Python, LangChain, cURL)
-
-**Available Endpoints on `http://127.0.0.1:7890`:**
-
-#### A. Explore Symbol (`POST /v1/explore`)
-```bash
-curl -X POST http://127.0.0.1:7890/v1/explore \
-  -H "Content-Type: application/json" \
-  -d '{"query": "CodeParser", "maxDepth": 3}'
-```
-
-#### B. Calculate Impact / Blast Radius (`POST /v1/impact`)
-```bash
-curl -X POST http://127.0.0.1:7890/v1/impact \
-  -H "Content-Type: application/json" \
-  -d '{"target": "UserService"}'
-```
-
-#### C. Force Reconcile / Sync (`POST /v1/sync`)
-```bash
-curl -X POST http://127.0.0.1:7890/v1/sync
-```
-
-#### D. Fetch Ready-to-Use Prompt Context (`GET /v1/context`)
-```bash
-curl http://127.0.0.1:7890/v1/context
-```
-
-#### E. Python Example (RAG / Agent Hook)
-```python
-import requests
-
-def get_code_context(symbol_name: str):
-    res = requests.post("http://127.0.0.1:7890/v1/explore", json={"query": symbol_name})
-    return res.json()
-
-context = get_code_context("calculateImpact")
-print("Target Node:", context["targetNodes"])
-print("Blast Radius:", context["impactRadius"])
-```
-
----
+### 2. Local REST API Integration (Python, LangChain, cURL)
+Available Endpoints on `http://127.0.0.1:7890`:
+- `POST /v1/explore` (`{"query": "CodeParser", "maxDepth": 3}`)
+- `POST /v1/impact` (`{"target": "UserService"}`)
+- `POST /v1/sync` (Forces atomic workspace reconciliation)
+- `GET /v1/context` (Ready-to-use surgical context for prompt injection)
 
 ### 3. File-Based AI Agents (Aider / Standard LLM Chat)
-Whenever you or an AI edit code, `KNOWLEDGE_BASE.md` at the project root is **automatically updated in real-time** by the watcher. File-reading agents can directly read `KNOWLEDGE_BASE.md` to understand the architecture of the repository without requiring special tools.
+Whenever you or an AI edit code, `KNOWLEDGE_BASE.md` at the project root is **automatically updated in real-time** by the watcher. File-reading agents can directly read `KNOWLEDGE_BASE.md` to understand the architecture without special tools.
+
+---
+
+## 🛠️ Development, Maintenance & CI/CD Tooling
+
+OmniKB includes built-in developer tooling for version control, diagnostics, and continuous integration:
+
+```bash
+# Typecheck & build
+npm run build
+
+# Run comprehensive test suite (all languages & fresh state checks)
+npm test
+
+# Run graph health & integrity diagnostics
+npm run diagnose
+
+# Run pre-commit checks (build + test + diagnose)
+npm run precommit
+
+# Run automated SemVer release & changelog generator (supports --dry-run)
+npm run release -- patch
+npm run release -- minor
+npm run release -- major
+
+# Run token savings benchmark
+npm run benchmark-tokens
+```
+
+### Supported Languages & Parsers
+- 🟦 **TypeScript / JavaScript** (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`)
+- 🐍 **Python** (`.py`, `.pyw` with class, function, and FastAPI/Flask decorator support)
+- 🐹 **Go** (`.go` with packages, imports, structs, interfaces, and receiver methods)
+- 🦀 **Rust** (`.rs` with structs, enums, traits, impl blocks, and functions)
+- ☕ **C-Style / Others** (`.java`, `.cs`, `.cpp`, `.c`, `.php`, `.rb`)
+- 📝 **Markdown** (`.md`, `.mdx` with cross-linking to code symbols)
 
 ---
 
 ## 🧪 Testing & Verification
 Run the automated test suite:
 ```bash
-node test/run-tests.js
+npm test
 ```

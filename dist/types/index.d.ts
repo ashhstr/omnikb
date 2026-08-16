@@ -50,6 +50,7 @@ export interface GraphStats {
         degree: number;
         inDegree: number;
         outDegree: number;
+        pageRank?: number;
     }>;
     lastSyncTime: number;
 }

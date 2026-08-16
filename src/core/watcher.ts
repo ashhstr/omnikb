@@ -85,6 +85,14 @@ export class WorkspaceWatcher {
       }
     }
 
+    // Remove stale files no longer present on disk
+    const diskRelPathSet = new Set(allFiles.map((f) => path.relative(this.config.rootPath, f).replace(/\\/g, '/')));
+    for (const storedRelPath of Array.from(this.storage.files.keys())) {
+      if (!diskRelPathSet.has(storedRelPath)) {
+        this.storage.removeFileFromGraph(storedRelPath);
+      }
+    }
+
     // Resolve cross-file references
     this.graph.resolveCrossFileReferences();
 
@@ -404,13 +412,22 @@ export class WorkspaceWatcher {
   }
 
   private shouldIgnore(relPath: string): boolean {
-    const parts = relPath.split('/');
+    const normPath = relPath.replace(/\\/g, '/');
+    const parts = normPath.split('/');
     const ignoreList = this.config.ignorePatterns || [];
 
+    for (const pattern of ignoreList) {
+      if (pattern.startsWith('*.')) {
+        const ext = pattern.slice(1).toLowerCase();
+        if (normPath.toLowerCase().endsWith(ext)) return true;
+      } else if (parts.includes(pattern) || normPath === pattern) {
+        return true;
+      }
+    }
+
     for (const part of parts) {
-      if (ignoreList.includes(part)) return true;
-      if (part.startsWith('.') && part !== '.' && part !== '..') {
-        if (part === '.omnikb' || part === '.git') return true;
+      if (part.startsWith('.') && (part === '.omnikb' || part === '.git' || part === '.vscode' || part === '.idea' || part === '.cache')) {
+        return true;
       }
     }
     return false;

@@ -4,6 +4,17 @@ Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## Y
 
 ---
 
+## 2026-08-16 — Adaptasi 55 agent ke format opencode native
+
+- **Masalah**: sebagian agent error — model `haiku`/`sonnet` (Claude-only, nggak ada di HCN Sec), `tools: {...}` deprecated, format frontmatter gaya Claude Code yang invalid YAML (description pakai literal `\n` + baris contoh tanpa indent — Claude Code lenient, opencode ketat).
+- **Fix**:
+  - Model: `haiku` → `hcnsec/glm-5.2`, `sonnet` → `hcnsec/kat-coder-pro-v2.5`, sisanya `inherit`.
+  - `mode: subagent` untuk semua 55 agent → primary tetap agent bawaan opencode (build/plan).
+  - `tools: {...}` deprecated → `permission:` (read/edit/bash/grep/glob/websearch/webfetch/task/todowrite).
+  - Rebuild frontmatter dengan parser lenient + block scalar `|-` → semua 55 valid YAML.
+  - Hapus ref `mcp__meigen__*` (server nggak ada) dari gallery-researcher & image-generator.
+- **Hasil**: 55/55 valid, 39 inherit + 12 glm-5.2 + 4 kat-coder-pro-v2.5. Restart opencode untuk apply.
+
 ## 2026-08-16 — Instalasi Skill Library (25 repo)
 
 - **Clone 25 repo** → `C:\Ash-Workspace\Skills\` (shallow, --depth 1). Masalah: repo besar (agentic-awesome-skills, ECC, dll) sempat gagal karena timeout & error network (early EOF) — di-retry berurutan sampai berhasil.

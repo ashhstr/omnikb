@@ -24,5 +24,9 @@ export declare class GraphEngine {
      * God Node & Architecture Bottleneck Detection (inspired by Graphify)
      */
     getStats(): GraphStats;
+    /**
+     * Calculates iterative PageRank centrality across all graph nodes
+     */
+    calculatePageRank(dampingFactor?: number, maxIterations?: number): Map<string, number>;
     private extractVerbatimSource;
 }

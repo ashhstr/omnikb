@@ -39,16 +39,30 @@ export class GraphEngine {
     }
 
     for (const edge of this.storage.edges.values()) {
-      if (edge.targetId.startsWith('sym:')) {
-        const symName = edge.targetId.slice(4).toLowerCase();
+      let isSym = edge.targetId.startsWith('sym:');
+      // If targetId is not in storage.nodes and not external, attempt re-resolution
+      if (
+        !isSym &&
+        !this.storage.nodes.has(edge.targetId) &&
+        !edge.targetId.startsWith('pkg:') &&
+        !edge.targetId.startsWith('crate:') &&
+        !edge.targetId.startsWith('file:')
+      ) {
+        isSym = true;
+      }
+
+      if (isSym) {
+        const rawSym = edge.targetId.startsWith('sym:')
+          ? edge.targetId.slice(4)
+          : edge.targetName || edge.targetId.split('#')[1] || edge.targetId;
+        const symName = rawSym.toLowerCase();
         const targets = symbolMap.get(symName);
+
         if (targets && targets.length > 0) {
-          // If unambiguous, resolve directly
           if (targets.length === 1) {
             edge.targetId = targets[0];
             edge.confidence = 'exact';
           } else {
-            // Find closest candidate by file proximity or import
             const sameFile = targets.find((t) => t.startsWith(edge.filePath));
             if (sameFile) {
               edge.targetId = sameFile;
@@ -58,6 +72,8 @@ export class GraphEngine {
               edge.confidence = 'heuristic';
             }
           }
+        } else {
+          edge.targetId = `sym:${rawSym}`;
         }
       }
     }
@@ -336,12 +352,16 @@ export class GraphEngine {
       inDegreeMap.set(edge.targetId, (inDegreeMap.get(edge.targetId) || 0) + 1);
     }
 
-    // Calculate top God Nodes (Highest connectivity / high centrality)
+    // Calculate PageRank Centrality
+    const pageRankMap = this.calculatePageRank();
+
+    // Calculate top God Nodes (Highest connectivity / high PageRank centrality)
     const godNodes = Array.from(this.storage.nodes.values())
       .filter((n) => n.kind !== 'file' && n.kind !== 'doc_section')
       .map((node) => {
         const inDeg = inDegreeMap.get(node.id) || 0;
         const outDeg = outDegreeMap.get(node.id) || 0;
+        const pr = pageRankMap.get(node.id) || 0;
         return {
           id: node.id,
           name: node.name,
@@ -349,9 +369,10 @@ export class GraphEngine {
           degree: inDeg + outDeg,
           inDegree: inDeg,
           outDegree: outDeg,
+          pageRank: Math.round(pr * 10000) / 10000,
         };
       })
-      .sort((a, b) => b.degree - a.degree)
+      .sort((a, b) => (b.pageRank || 0) - (a.pageRank || 0) || b.degree - a.degree)
       .slice(0, 10);
 
     return {
@@ -364,6 +385,71 @@ export class GraphEngine {
       godNodes,
       lastSyncTime: Date.now(),
     };
+  }
+
+  /**
+   * Calculates iterative PageRank centrality across all graph nodes
+   */
+  public calculatePageRank(dampingFactor: number = 0.85, maxIterations: number = 20): Map<string, number> {
+    const nodeIds = Array.from(this.storage.nodes.keys());
+    const N = nodeIds.length;
+    const rankMap = new Map<string, number>();
+
+    if (N === 0) return rankMap;
+
+    const initialRank = 1 / N;
+    for (const id of nodeIds) {
+      rankMap.set(id, initialRank);
+    }
+
+    // Outgoing edges per node & Incoming edges per node
+    const outgoing = new Map<string, string[]>();
+    const incoming = new Map<string, string[]>();
+
+    for (const id of nodeIds) {
+      outgoing.set(id, []);
+      incoming.set(id, []);
+    }
+
+    for (const edge of this.storage.edges.values()) {
+      if (outgoing.has(edge.sourceId) && incoming.has(edge.targetId)) {
+        outgoing.get(edge.sourceId)!.push(edge.targetId);
+        incoming.get(edge.targetId)!.push(edge.sourceId);
+      }
+    }
+
+    for (let iter = 0; iter < maxIterations; iter++) {
+      const nextRanks = new Map<string, number>();
+      let danglingSum = 0;
+
+      for (const id of nodeIds) {
+        const outList = outgoing.get(id)!;
+        if (outList.length === 0) {
+          danglingSum += rankMap.get(id)!;
+        }
+      }
+
+      for (const id of nodeIds) {
+        const inList = incoming.get(id)!;
+        let sumIn = 0;
+
+        for (const inId of inList) {
+          const outDegree = outgoing.get(inId)!.length;
+          if (outDegree > 0) {
+            sumIn += rankMap.get(inId)! / outDegree;
+          }
+        }
+
+        const newRank = (1 - dampingFactor) / N + dampingFactor * (sumIn + danglingSum / N);
+        nextRanks.set(id, newRank);
+      }
+
+      for (const [id, r] of nextRanks.entries()) {
+        rankMap.set(id, r);
+      }
+    }
+
+    return rankMap;
   }
 
   private extractVerbatimSource(node: CodeNode): ExploreResult['verbatimSource'] {
