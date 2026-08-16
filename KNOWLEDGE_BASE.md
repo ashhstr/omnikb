@@ -1,6 +1,6 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T15:01:41.779Z | **Indexed Files**: 56 | **Total Symbols**: 221 | **Call & Dependency Edges**: 1270
+> **Auto-Updated**: 2026-08-16T15:03:22.549Z | **Indexed Files**: 56 | **Total Symbols**: 223 | **Call & Dependency Edges**: 1280
 
 ## 1. Executive Architecture Overview
 
@@ -21,7 +21,7 @@ The most referenced and interconnected symbols in this repository:
 | **`runTests`** | `test/run-tests.js` | **164** | 3 | 161 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
 | **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
-| **`main`** | `src/cli.ts` | **68** | 2 | 66 |
+| **`main`** | `src/cli.ts` | **67** | 1 | 66 |
 | **`start`** | `src/server/http-server.ts` | **50** | 5 | 45 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
 | **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
@@ -86,7 +86,7 @@ The most referenced and interconnected symbols in this repository:
 - **`docs/roadmap.md`**: `1 symbols`
 - **`docs/skill-library.md`**: `1 symbols`
 - **`docs/work-log.md`**: `1 symbols`
-- **`docs/ENGINEERING_STANDARDS.md`**: `9 symbols`
+- **`docs/release-and-commit-rules.md`**: `11 symbols`
 
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
