@@ -1,7 +1,7 @@
 {
   "name": "omnikb",
-  "version": "1.2.0",
-  "description": "Universal Real-Time Code Knowledge Base & Graph Intelligence Engine with Debounced Auto-Sync (<500ms), Zero-Server Graph RAG, and Multi-Agent Interfaces (MCP & REST)",
+  "version": "1.0.0",
+  "description": "Universal Real-Time Code Knowledge Base & Graph Intelligence Engine with Auto-Sync and Multi-Agent Interfaces",
   "main": "dist/cli.js",
   "bin": {
     "omnikb": "dist/cli.js"
@@ -9,46 +9,24 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "node dist/cli.js serve",
-    "test": "node test/run-tests.js",
-    "index": "node scripts/index-workspace.js",
-    "benchmark": "node scripts/benchmark-tokens.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ashhstr/omnikb.git"
-  },
-  "homepage": "https://github.com/ashhstr/omnikb#readme",
-  "bugs": {
-    "url": "https://github.com/ashhstr/omnikb/issues"
+    "start": "node dist/cli.js",
+    "test": "node test/run-tests.js"
   },
   "keywords": [
     "knowledge-base",
     "code-graph",
     "mcp",
-    "model-context-protocol",
     "graph-rag",
     "codegraph",
     "gitnexus",
     "graphify",
     "context7",
-    "ai-agent",
-    "antigravity",
-    "claude-code",
-    "opencode",
-    "cursor",
-    "windsurf",
-    "codex"
+    "ai-agent"
   ],
-  "author": "Ash (https://github.com/ashhstr)",
+  "author": "",
   "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "devDependencies": {
-    "@types/node": "^20.11.0"
-  },
-  "dependencies": {
+    "@types/node": "^20.11.0",
     "typescript": "^5.3.3"
   }
 }

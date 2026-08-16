@@ -43,6 +43,16 @@ export function formatUser(u: any) {
 app.get('/api/users/:id', getUserHandler);
 `;
 
+    const tsResult = parser.parseFile('src/services/user.ts', tsCode);
+    assert.strictEqual(tsResult.language, 'typescript');
+    assert.ok(tsResult.nodes.some((n) => n.name === 'UserService' && n.kind === 'class'));
+    assert.ok(tsResult.nodes.some((n) => n.name === 'getUser' && n.kind === 'function'));
+    assert.ok(tsResult.nodes.some((n) => n.name === 'formatUser' && n.kind === 'function'));
+    assert.ok(tsResult.nodes.some((n) => n.kind === 'route'));
+    assert.ok(tsResult.edges.some((e) => e.kind === 'imports'));
+    assert.ok(tsResult.edges.some((e) => e.kind === 'calls'));
+    console.log('   ✅ TypeScript parsing passed.');
+
     const pyCode = `
 from app.db import Database
 
@@ -58,23 +68,6 @@ def verify_hash(user, pwd):
 def login_route():
     pass
 `;
-
-    // Write physical files to testWorkspace
-    fs.mkdirSync(path.join(testWorkspace, 'src', 'services'), { recursive: true });
-    fs.writeFileSync(path.join(testWorkspace, 'src', 'services', 'user.ts'), tsCode);
-
-    fs.mkdirSync(path.join(testWorkspace, 'app'), { recursive: true });
-    fs.writeFileSync(path.join(testWorkspace, 'app', 'auth.py'), pyCode);
-
-    const tsResult = parser.parseFile('src/services/user.ts', tsCode);
-    assert.strictEqual(tsResult.language, 'typescript');
-    assert.ok(tsResult.nodes.some((n) => n.name === 'UserService' && n.kind === 'class'));
-    assert.ok(tsResult.nodes.some((n) => n.name === 'getUser' && n.kind === 'function'));
-    assert.ok(tsResult.nodes.some((n) => n.name === 'formatUser' && n.kind === 'function'));
-    assert.ok(tsResult.nodes.some((n) => n.kind === 'route'));
-    assert.ok(tsResult.edges.some((e) => e.kind === 'imports'));
-    assert.ok(tsResult.edges.some((e) => e.kind === 'calls'));
-    console.log('   ✅ TypeScript parsing passed.');
 
     const pyResult = parser.parseFile('app/auth.py', pyCode);
     assert.strictEqual(pyResult.language, 'python');
@@ -173,137 +166,73 @@ def login_route():
     assert.strictEqual(checkDelete.length, 1, 'deleteUser symbol should now exist in index');
     console.log('   ✅ Auto-sync incremental update passed.');
 
-    // 6. Test Dynamic Full-File Drilldown & Import Inspection (Enhancement 1)
-    console.log('6. Testing Dynamic Full-File Drilldown & Import Inspection...');
-    const drilldownRes = graph.explore('formatUser', 3, {
-      includeFullFile: true,
-      includeImports: true,
-    });
+    // 6. Test 100% Freshness Guarantee & Atomic Staleness Detection
+    console.log('6. Testing 100% Freshness Verification & Staleness Detection...');
+    const diskUserPath = path.join(testWorkspace, 'src', 'services', 'user.ts');
+    fs.mkdirSync(path.dirname(diskUserPath), { recursive: true });
+    fs.writeFileSync(diskUserPath, modifiedTsCode, 'utf8');
 
-    assert.ok(drilldownRes.fullFileSource, 'fullFileSource should be populated when includeFullFile is true');
-    assert.strictEqual(drilldownRes.fullFileSource.length, 1);
-    assert.strictEqual(drilldownRes.fullFileSource[0].filePath, 'src/services/user.ts');
-    assert.ok(drilldownRes.fullFileSource[0].content.includes('export class UserService'));
+    // Update storage lastModified to match disk
+    const diskStats = fs.statSync(diskUserPath);
+    storage.files.get('src/services/user.ts').lastModified = diskStats.mtimeMs;
+    storage.files.get('src/services/user.ts').hash = CodeParser.computeHash(modifiedTsCode);
 
-    assert.ok(drilldownRes.importedSymbols, 'importedSymbols should be populated when includeImports is true');
-    assert.ok(
-      drilldownRes.importedSymbols.some((imp) => imp.symbols.includes('db')),
-      'Should discover imported db symbol'
-    );
-    console.log('   ✅ Dynamic full-file drilldown & import inspection passed.');
+    const freshExplore = graph.explore('deleteUser', 3);
+    assert.strictEqual(freshExplore.freshness.isFresh, true, 'Freshness must be true when file matches index');
+    assert.strictEqual(freshExplore.freshness.isStale, false);
+    assert.ok(freshExplore.freshness.contentHash, 'Content hash must be present');
+    console.log('   ✅ Freshness verification (clean state) passed.');
 
-    // 7. Test AST Cross-File Exact Precision (Enhancement 3)
-    console.log('7. Testing AST Exact Cross-File Resolution...');
-    const fileA = `
-import { helperFunc } from './helper';
-export function mainEntry() {
-  return helperFunc();
-}
-`;
-    const fileB = `
-export function helperFunc() {
-  return 'from helper';
-}
-`;
-    fs.writeFileSync(path.join(testWorkspace, 'src', 'main.ts'), fileA);
-    fs.writeFileSync(path.join(testWorkspace, 'src', 'helper.ts'), fileB);
+    // Simulate disk file change behind the back of the index
+    fs.writeFileSync(diskUserPath, modifiedTsCode + '\n// Changed directly on disk without indexing', 'utf8');
+    // Bump mtime
+    const futureTime = new Date(Date.now() + 2000);
+    fs.utimesSync(diskUserPath, futureTime, futureTime);
 
-    const resA = parser.parseFile('src/main.ts', fileA);
-    const resB = parser.parseFile('src/helper.ts', fileB);
+    const staleExplore = graph.explore('deleteUser', 3);
+    assert.strictEqual(staleExplore.freshness.isFresh, false, 'Freshness must detect disk modification');
+    assert.strictEqual(staleExplore.freshness.isStale, true);
+    assert.strictEqual(staleExplore.freshness.staleReason, 'file_modified_on_disk');
+    assert.ok(staleExplore.stalenessWarning, 'Staleness warning string must be generated');
+    console.log('   ✅ Atomic staleness detection passed.');
 
-    storage.updateFileGraph(
-      'src/main.ts',
-      {
-        path: 'src/main.ts',
-        hash: resA.contentHash,
-        size: 100,
-        lastModified: Date.now(),
-        language: 'typescript',
-        nodeCount: resA.nodes.length,
-        edgeCount: resA.edges.length,
-      },
-      resA.nodes,
-      resA.edges
-    );
-
-    storage.updateFileGraph(
-      'src/helper.ts',
-      {
-        path: 'src/helper.ts',
-        hash: resB.contentHash,
-        size: 100,
-        lastModified: Date.now(),
-        language: 'typescript',
-        nodeCount: resB.nodes.length,
-        edgeCount: resB.edges.length,
-      },
-      resB.nodes,
-      resB.edges
-    );
-
-    graph.resolveCrossFileReferences();
-
-    const callEdge = Array.from(storage.edges.values()).find((e) => e.sourceId === 'src/main.ts#mainEntry' && e.kind === 'calls');
-    assert.ok(callEdge, 'Call edge should exist');
-    assert.strictEqual(callEdge.targetId, 'src/helper.ts#helperFunc', 'Should resolve directly to helperFunc in helper.ts');
-    assert.strictEqual(callEdge.confidence, 'exact', 'Confidence must be exact');
-    console.log('   ✅ AST exact cross-file resolution passed.');
-
-    // 8. Test Dynamic Workspace Switching in MCP Server
-    console.log('8. Testing Dynamic Workspace Switching in McpServer...');
-    const { McpServer } = require('../dist/server/mcp-server');
-    const { WorkspaceWatcher } = require('../dist/core/watcher');
-
-    const secondWorkspace = path.join(__dirname, 'temp_workspace_2');
-    if (fs.existsSync(secondWorkspace)) {
-      fs.rmSync(secondWorkspace, { recursive: true, force: true });
-    }
-    fs.mkdirSync(secondWorkspace, { recursive: true });
-    fs.writeFileSync(
-      path.join(secondWorkspace, 'auth.ts'),
-      'export function authenticateToken(token: string) { return token.length > 0; }'
-    );
-
+    // 7. Test Active Reconciliation (kb_sync / forceReconcile)
+    console.log('7. Testing Active Reconciliation (forceReconcile & kb_sync)...');
     const watcher = new WorkspaceWatcher(
-      { rootPath: testWorkspace, debounceMs: 200, autoGenerateReport: false, autoGenerateVisual: false },
+      { rootPath: testWorkspace, autoGenerateReport: false, autoGenerateVisual: false },
       parser,
       storage,
       graph,
       reporter
     );
 
-    const mcp = new McpServer(testWorkspace, parser, storage, graph, reporter, watcher);
+    const reconciledStats = await watcher.forceReconcile();
+    assert.ok(reconciledStats.totalFiles > 0, 'Reconciled stats must include files');
 
-    // Switch to second project
-    const switchRes = await mcp.switchWorkspace(secondWorkspace);
-    assert.strictEqual(switchRes, true, 'switchWorkspace should succeed');
+    const reconciledExplore = graph.explore('deleteUser', 3);
+    assert.strictEqual(reconciledExplore.freshness.isFresh, true, 'File must return to fresh state after reconcile');
+    assert.strictEqual(reconciledExplore.freshness.isStale, false);
 
-    const callRes = await mcp.handleRequest({
+    // Test MCP Server kb_sync tool call
+    const { McpServer } = require('../dist/server/mcp-server');
+    const mcpServer = new McpServer(graph, storage, watcher);
+    const rpcResponse = await mcpServer.handleRequest({
       jsonrpc: '2.0',
-      id: 1,
+      id: 'test-sync-1',
       method: 'tools/call',
       params: {
-        name: 'kb_explore',
-        arguments: { query: 'authenticateToken', includeFullFile: true },
+        name: 'kb_sync',
+        arguments: { force: true },
       },
     });
 
-    assert.ok(callRes && callRes.result, 'kb_explore must return result');
-    const parsedExpl = JSON.parse(callRes.result.content[0].text);
-    assert.ok(
-      parsedExpl.targetNodes.some((n) => n.name === 'authenticateToken'),
-      'Should discover symbol in switched workspace'
-    );
-    assert.ok(parsedExpl.fullFileSource && parsedExpl.fullFileSource.length > 0, 'Should include full file source');
+    assert.strictEqual(rpcResponse.id, 'test-sync-1');
+    assert.ok(rpcResponse.result && rpcResponse.result.content);
+    const parsedMcpOut = JSON.parse(rpcResponse.result.content[0].text);
+    assert.strictEqual(parsedMcpOut.success, true);
+    console.log('   ✅ Active reconciliation and MCP kb_sync passed.');
 
-    // Cleanup second workspace
-    watcher.stopWatching();
-    if (fs.existsSync(secondWorkspace)) {
-      fs.rmSync(secondWorkspace, { recursive: true, force: true });
-    }
-    console.log('   ✅ Dynamic workspace switching passed.');
-
-    console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! OmniKB core is verified.\n');
+    console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! 100% Freshness Guarantee is verified.\n');
   } finally {
     if (fs.existsSync(testWorkspace)) {
       fs.rmSync(testWorkspace, { recursive: true, force: true });

@@ -1,12 +1,7 @@
 import * as readline from 'readline';
-import * as path from 'path';
-import * as fs from 'fs';
 import { GraphEngine } from '../core/graph';
 import { KnowledgeStorage } from '../core/storage';
 import { WorkspaceWatcher } from '../core/watcher';
-import { CodeParser } from '../core/parser';
-import { KnowledgeReporter } from '../core/reporter';
-import { IKnowledgeStorage } from '../core/storage-types';
 
 export interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -27,92 +22,15 @@ export interface JsonRpcResponse {
 }
 
 export class McpServer {
-  private workspaceRoot: string;
-  private parser: CodeParser;
-  private storage: IKnowledgeStorage;
   private graph: GraphEngine;
-  private reporter: KnowledgeReporter;
+  private storage: KnowledgeStorage;
   private watcher: WorkspaceWatcher;
   private rl: readline.Interface | null = null;
 
-  constructor(
-    workspaceRoot: string,
-    parser: CodeParser,
-    storage: KnowledgeStorage,
-    graph: GraphEngine,
-    reporter: KnowledgeReporter,
-    watcher: WorkspaceWatcher
-  ) {
-    this.workspaceRoot = path.resolve(workspaceRoot);
-    this.parser = parser;
-    this.storage = storage;
+  constructor(graph: GraphEngine, storage: KnowledgeStorage, watcher: WorkspaceWatcher) {
     this.graph = graph;
-    this.reporter = reporter;
+    this.storage = storage;
     this.watcher = watcher;
-  }
-
-  /**
-   * Helper to normalize file URIs and Windows/POSIX paths to absolute system paths
-   */
-  private parsePath(input: string): string {
-    if (!input) return '';
-    let p = input;
-    if (p.startsWith('file://')) {
-      p = decodeURIComponent(p.replace(/^file:\/\//, ''));
-      // Windows file:///C:/path or /C:/path -> C:/path
-      if (/^\/?[A-Za-z]:/.test(p)) {
-        p = p.replace(/^\//, '');
-      }
-    }
-    return path.resolve(p);
-  }
-
-  /**
-   * Dynamically switches the active project workspace, scans it, and starts auto-sync
-   */
-  public async switchWorkspace(targetPath: string): Promise<boolean> {
-    const norm = this.parsePath(targetPath);
-    if (!norm || !fs.existsSync(norm) || !fs.statSync(norm).isDirectory()) {
-      console.error(`[OmniKB MCP] Invalid or non-existent workspace directory: '${targetPath}'`);
-      return false;
-    }
-
-    if (path.normalize(norm) === path.normalize(this.workspaceRoot)) {
-      return true; // Already active on this directory
-    }
-
-    console.error(`[OmniKB MCP] Switching active workspace to: ${norm}`);
-
-    // 1. Stop existing watcher on old directory
-    this.watcher.stopWatching();
-
-    // 2. Re-initialize storage, graph, reporter for the new directory
-    this.workspaceRoot = norm;
-    const newStorage = new KnowledgeStorage(norm);
-    await newStorage.init();
-    this.storage = newStorage;
-
-    this.graph = new GraphEngine(norm, newStorage);
-    this.reporter = new KnowledgeReporter(norm, newStorage, this.graph);
-    this.watcher = new WorkspaceWatcher(
-      {
-        rootPath: norm,
-        debounceMs: 400,
-        autoGenerateReport: true,
-        autoGenerateVisual: true,
-      },
-      this.parser,
-      newStorage,
-      this.graph,
-      this.reporter
-    );
-
-    // 3. Scan the new project and start auto-sync watcher
-    await this.watcher.initialScan();
-    this.watcher.startWatching();
-
-    console.error(`[OmniKB MCP] Active workspace updated and watcher running on: ${norm}`);
-    return true;
   }
 
   /**
@@ -145,36 +63,14 @@ export class McpServer {
       }
     });
 
-    this.rl.on('close', () => {
-      console.error('[OmniKB MCP] Host application closed. Exiting OmniKB process.');
-      process.exit(0);
-    });
-
-    console.error(`[OmniKB MCP] Stdio server initialized (Initial workspace: ${this.workspaceRoot}).`);
+    console.error('[OmniKB MCP] Stdio server initialized.');
   }
 
   public async handleRequest(req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
     const { method, params, id } = req;
 
     switch (method) {
-      case 'initialize': {
-        const rootUri = params?.rootUri;
-        const rootPath = params?.rootPath;
-        const workspaceFolders = params?.workspaceFolders;
-        let detectedPath = '';
-
-        if (rootPath) {
-          detectedPath = rootPath;
-        } else if (rootUri) {
-          detectedPath = rootUri;
-        } else if (Array.isArray(workspaceFolders) && workspaceFolders.length > 0) {
-          detectedPath = workspaceFolders[0].uri || workspaceFolders[0].path;
-        }
-
-        if (detectedPath) {
-          await this.switchWorkspace(detectedPath);
-        }
-
+      case 'initialize':
         return {
           jsonrpc: '2.0',
           id,
@@ -182,34 +78,18 @@ export class McpServer {
             protocolVersion: '2024-11-05',
             serverInfo: {
               name: 'omnikb-mcp-server',
-              version: '1.1.0',
+              version: '1.0.0',
             },
             capabilities: {
               tools: {},
             },
-            instructions: `OmniKB is your pre-indexed real-time Knowledge Base and Code Graph engine (Active Workspace: ${this.workspaceRoot}).
+            instructions: `OmniKB is your pre-indexed real-time Knowledge Base and Code Graph engine.
 - Call 'kb_explore' for any structural question ("how does X work", "call flow for Y", or symbol lookup) to get exact source code, caller graph, and blast radius in 1 step.
 - Call 'kb_impact' before refactoring to check all files and routes that depend on a symbol.
 - Call 'kb_search' for instant full-text symbol searches.
-- Call 'kb_switch_project' to switch or re-index any other project folder.
-The index auto-syncs continuously on every file change.`,
+The index auto-syncs continuously on every save.`,
           },
         };
-      }
-
-      case 'workspace/didChangeWorkspaceFolders': {
-        const added = params?.event?.added || params?.added;
-        if (Array.isArray(added) && added.length > 0) {
-          const firstFolder = added[0].uri || added[0].path;
-          if (firstFolder) {
-            await this.switchWorkspace(firstFolder);
-          }
-        }
-        return null;
-      }
-
-      case 'notifications/initialized':
-        return null;
 
       case 'tools/list':
         return {
@@ -220,7 +100,7 @@ The index auto-syncs continuously on every file change.`,
               {
                 name: 'kb_explore',
                 description:
-                  'Deeply explores a function, class, file, or concept in the active workspace. Returns relevant symbol definitions, call hierarchies, callers, callees, impact radius, and verbatim code lines in 1 single call.',
+                  'Deeply explores a function, class, file, or concept. Returns relevant symbol definitions, call hierarchies, callers, callees, impact radius, and verbatim code lines in 1 single call.',
                 inputSchema: {
                   type: 'object',
                   properties: {
@@ -232,14 +112,6 @@ The index auto-syncs continuously on every file change.`,
                       type: 'number',
                       description: 'Maximum depth for call graph and impact traversal (default: 3).',
                     },
-                    includeFullFile: {
-                      type: 'boolean',
-                      description: 'When true, returns the entire verbatim source code file containing the target symbol (eliminates compaction context loss).',
-                    },
-                    includeImports: {
-                      type: 'boolean',
-                      description: 'When true, returns all module imports and imported symbols for the target file.',
-                    },
                   },
                   required: ['query'],
                 },
@@ -247,7 +119,7 @@ The index auto-syncs continuously on every file change.`,
               {
                 name: 'kb_impact',
                 description:
-                  'Analyzes the blast radius and breaking change risk of modifying or deleting a symbol/file in the active workspace.',
+                  'Analyzes the blast radius and breaking change risk of modifying or deleting a symbol/file.',
                 inputSchema: {
                   type: 'object',
                   properties: {
@@ -265,7 +137,7 @@ The index auto-syncs continuously on every file change.`,
               },
               {
                 name: 'kb_search',
-                description: 'Fast inverted index & full-text search across all codebase symbols and documentation in active workspace.',
+                description: 'Fast inverted index & full-text search across all codebase symbols and documentation.',
                 inputSchema: {
                   type: 'object',
                   properties: {
@@ -284,7 +156,7 @@ The index auto-syncs continuously on every file change.`,
               {
                 name: 'kb_architecture',
                 description:
-                  'Returns top-level repository metrics, God Nodes (most coupled components), and HTTP route map for active workspace.',
+                  'Returns top-level repository metrics, God Nodes (most coupled components), and HTTP route map.',
                 inputSchema: {
                   type: 'object',
                   properties: {},
@@ -292,24 +164,24 @@ The index auto-syncs continuously on every file change.`,
               },
               {
                 name: 'kb_status',
-                description: 'Returns active workspace path, real-time sync status, watched files, and pending queue.',
+                description: 'Returns real-time sync status, watched files, and pending queue.',
                 inputSchema: {
                   type: 'object',
                   properties: {},
                 },
               },
               {
-                name: 'kb_switch_project',
-                description: 'Switches the active knowledge base workspace to a new project directory, scans it, and starts auto-sync file watching.',
+                name: 'kb_sync',
+                description:
+                  'Forces an immediate atomic reconciliation of all files in the workspace, ensuring 100% graph freshness.',
                 inputSchema: {
                   type: 'object',
                   properties: {
-                    projectPath: {
-                      type: 'string',
-                      description: 'Absolute path or file URI of the project directory to switch to.',
+                    force: {
+                      type: 'boolean',
+                      description: 'Force full re-read and reference re-linking (default: true).',
                     },
                   },
-                  required: ['projectPath'],
                 },
               },
             ],
@@ -324,10 +196,7 @@ The index auto-syncs continuously on every file change.`,
           let outputText = '';
 
           if (toolName === 'kb_explore') {
-            const res = this.graph.explore(args.query, args.maxDepth || 3, {
-              includeFullFile: args.includeFullFile,
-              includeImports: args.includeImports,
-            });
+            const res = this.graph.explore(args.query, args.maxDepth || 3);
             outputText = JSON.stringify(res, null, 2);
           } else if (toolName === 'kb_impact') {
             const res = this.graph.calculateImpact(args.target, args.maxDepth || 5);
@@ -341,24 +210,11 @@ The index auto-syncs continuously on every file change.`,
           } else if (toolName === 'kb_status') {
             const stats = this.graph.getStats();
             const pending = this.watcher.getPendingQueue();
+            outputText = JSON.stringify({ stats, pendingQueue: pending }, null, 2);
+          } else if (toolName === 'kb_sync') {
+            const stats = await this.watcher.forceReconcile();
             outputText = JSON.stringify(
-              {
-                activeWorkspace: this.workspaceRoot,
-                stats,
-                pendingQueue: pending,
-              },
-              null,
-              2
-            );
-          } else if (toolName === 'kb_switch_project') {
-            const success = await this.switchWorkspace(args.projectPath);
-            const stats = this.graph.getStats();
-            outputText = JSON.stringify(
-              {
-                success,
-                activeWorkspace: this.workspaceRoot,
-                stats,
-              },
+              { success: true, message: 'Workspace successfully reconciled and refreshed', stats },
               null,
               2
             );
