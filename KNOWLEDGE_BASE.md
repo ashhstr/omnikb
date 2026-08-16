@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T10:36:13.351Z | **Indexed Files**: 44 | **Total Symbols**: 202 | **Call & Dependency Edges**: 1084
+> **Auto-Updated**: 2026-08-16T13:48:34.965Z | **Indexed Files**: 46 | **Total Symbols**: 180 | **Call & Dependency Edges**: 1066
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `44` |
-| **Functions & Methods** | `96` |
-| **Classes & Interfaces** | `36` |
-| **Web Routes / API Endpoints** | `0` |
-| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 3`, `typescript: 16` |
+| **Source Files** | `46` |
+| **Functions & Methods** | `80` |
+| **Classes & Interfaces** | `33` |
+| **Web Routes / API Endpoints** | `1` |
+| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 5`, `typescript: 16` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,14 +18,20 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls |
 | :--- | :--- | :--- | :--- | :--- |
-| **`runTests`** | `test/run-tests.js` | **121** | 3 | 118 |
+| **`runTests`** | `test/run-tests.js` | **108** | 3 | 105 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
 | **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
+| **`main`** | `src/cli.ts` | **67** | 1 | 66 |
+| **`start`** | `src/server/http-server.ts` | **46** | 4 | 42 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
-| **`start`** | `src/server/http-server.ts` | **44** | 4 | 40 |
+| **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
 | **`initialScan`** | `src/core/watcher.ts` | **26** | 8 | 18 |
-| **`switchWorkspace`** | `src/server/mcp-server.ts` | **23** | 7 | 16 |
-| **`parseFile`** | `src/core/parser.ts` | **22** | 10 | 12 |
+
+## 3. Web & API Route Registry
+
+| HTTP Method & Route | File Definition |
+| :--- | :--- |
+| `GET src/services/user.ts` | `test/run-tests.js:177` |
 
 ## 4. Module Map & Component Directory
 
@@ -36,18 +42,19 @@ The most referenced and interconnected symbols in this repository:
 - **`SECURITY.md`**: `5 symbols`
 - **`tsconfig.json`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
-- **`.gitignore`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
-- **`package.json`**: `1 symbols`
+- **`.gitignore`**: `1 symbols`
 - **`README.md`**: `1 symbols`
+- **`package.json`**: `1 symbols`
 
-### `/scripts` (6 files)
+### `/scripts` (7 files)
 - **`scripts/install-startup.vbs`**: `1 symbols`
 - **`scripts/omnikb-silent.vbs`**: `1 symbols`
 - **`scripts/omnikb-startup.bat`**: `1 symbols`
 - **`scripts/omnikb.sh`**: `1 symbols`
 - **`scripts/index-workspace.js`**: `2 symbols`
 - **`scripts/benchmark-tokens.js`**: `2 symbols`
+- **`scripts/supervisor.js`**: `2 symbols`
 
 ### `/examples` (6 files)
 - **`examples/configs/antigravity.mcp.json`**: `1 symbols`
@@ -59,26 +66,27 @@ The most referenced and interconnected symbols in this repository:
 
 ### `/src` (16 files)
 - **`src/integrations/context7.ts`**: `6 symbols`
-- **`src/integrations/gitnexus.ts`**: `5 symbols`
-- **`src/cli.ts`**: `18 symbols`
-- **`src/core/graph.ts`**: `8 symbols`
 - **`src/core/parser-ts-ast.ts`**: `14 symbols`
-- **`src/core/parser.ts`**: `18 symbols`
-- **`src/core/reporter.ts`**: `8 symbols`
 - **`src/core/storage-types.ts`**: `4 symbols`
-- **`src/core/storage.ts`**: `17 symbols`
-- **`src/core/watcher.ts`**: `11 symbols`
+- **`src/integrations/graphify.ts`**: `5 symbols`
+- **`src/integrations/index.ts`**: `1 symbols`
+- **`src/core/graph.ts`**: `8 symbols`
+- **`src/core/parser.ts`**: `17 symbols`
+- **`src/core/reporter.ts`**: `4 symbols`
+- **`src/core/storage.ts`**: `16 symbols`
+- **`src/core/watcher.ts`**: `12 symbols`
 - *(and 6 more files)*
 
 ### `/docs` (5 files)
 - **`docs/README.md`**: `1 symbols`
-- **`docs/roadmap.md`**: `1 symbols`
 - **`docs/sop-opencode-provider.md`**: `1 symbols`
-- **`docs/skill-library.md`**: `7 symbols`
+- **`docs/roadmap.md`**: `1 symbols`
+- **`docs/skill-library.md`**: `1 symbols`
 - **`docs/work-log.md`**: `1 symbols`
 
-### `/test` (1 files)
-- **`test/run-tests.js`**: `2 symbols`
+### `/test` (2 files)
+- **`test/benchmark-token-savings.js`**: `4 symbols`
+- **`test/run-tests.js`**: `3 symbols`
 
 ## 5. Agent Instructions for Context Retrieval
 

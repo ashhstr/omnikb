@@ -70,6 +70,11 @@ async function main() {
       const portIndex = args.indexOf('--port');
       const port = portIndex !== -1 && args[portIndex + 1] ? parseInt(args[portIndex + 1], 10) : 7890;
 
+      // If MCP mode, redirect standard console.log to stderr so JSON-RPC stdout is never corrupted
+      if (isMcp) {
+        console.log = (...logArgs: any[]) => console.error(...logArgs);
+      }
+
       await watcher.initialScan();
       watcher.startWatching();
 

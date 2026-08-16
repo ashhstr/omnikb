@@ -121,10 +121,7 @@ class LocalHttpServer {
                         if (pathname === '/v1/explore') {
                             const query = body.query || '';
                             const maxDepth = body.maxDepth || 3;
-                            const result = this.graph.explore(query, maxDepth, {
-                                includeFullFile: !!body.includeFullFile,
-                                includeImports: !!body.includeImports,
-                            });
+                            const result = this.graph.explore(query, maxDepth);
                             this.sendJson(res, 200, result);
                             return;
                         }
@@ -142,6 +139,15 @@ class LocalHttpServer {
                             this.sendJson(res, 200, result);
                             return;
                         }
+                        if (pathname === '/v1/sync') {
+                            const stats = await this.watcher.forceReconcile();
+                            this.sendJson(res, 200, {
+                                success: true,
+                                message: 'Workspace successfully reconciled and refreshed',
+                                stats,
+                            });
+                            return;
+                        }
                     }
                     this.sendJson(res, 404, { error: `Endpoint not found: ${pathname}` });
                 }
@@ -151,11 +157,11 @@ class LocalHttpServer {
             });
             this.server.on('error', (err) => {
                 if (err.code === 'EADDRINUSE') {
-                    console.error(`[OmniKB REST API] Port ${this.port} is in use (another instance active). Continuing MCP mode.`);
+                    console.warn(`[OmniKB REST API] Port ${this.port} is already in use. REST API disabled, MCP & Watcher remain active.`);
                     resolve();
                 }
                 else {
-                    console.error('[OmniKB REST API] Server error:', err.message);
+                    console.error(`[OmniKB REST API] Server error:`, err?.message || err);
                     resolve();
                 }
             });

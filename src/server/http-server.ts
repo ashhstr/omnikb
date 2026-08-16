@@ -142,6 +142,16 @@ export class LocalHttpServer {
         }
       });
 
+      this.server.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.warn(`[OmniKB REST API] Port ${this.port} is already in use. REST API disabled, MCP & Watcher remain active.`);
+          resolve();
+        } else {
+          console.error(`[OmniKB REST API] Server error:`, err?.message || err);
+          resolve();
+        }
+      });
+
       this.server.listen(this.port, '127.0.0.1', () => {
         console.log(`[OmniKB REST API] Universal server running at http://127.0.0.1:${this.port}`);
         console.log(`[OmniKB REST API] Interactive Visualizer: http://127.0.0.1:${this.port}/visual`);

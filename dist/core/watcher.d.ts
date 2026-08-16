@@ -23,6 +23,11 @@ export declare class WorkspaceWatcher {
      */
     startWatching(): void;
     /**
+     * Performs an immediate atomic reconciliation of all files in the workspace,
+     * detecting any out-of-sync files, mass deletions, or branch changes.
+     */
+    forceReconcile(): Promise<GraphStats>;
+    /**
      * Stops the active file watchers
      */
     stopWatching(): void;

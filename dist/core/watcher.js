@@ -64,7 +64,6 @@ class WorkspaceWatcher {
                 '.cache',
                 '*.tmp',
                 '*.log',
-                'KNOWLEDGE_BASE.md',
             ],
             ...config,
         };
@@ -142,11 +141,92 @@ class WorkspaceWatcher {
             });
             this.fsWatchers.push(watcher);
             console.log(`[OmniKB Watcher] Active and monitoring for changes (debounce: ${this.config.debounceMs}ms)...`);
+            // Attach Git HEAD / Branch Watcher if .git exists
+            const gitDir = path.join(this.config.rootPath, '.git');
+            const gitHeadPath = path.join(gitDir, 'HEAD');
+            if (fs.existsSync(gitHeadPath)) {
+                try {
+                    const gitWatcher = fs.watch(gitHeadPath, () => {
+                        console.log(`[OmniKB Git Watcher] .git/HEAD changed, triggering atomic branch reconciliation...`);
+                        this.forceReconcile().catch((e) => console.error(`[OmniKB Git Watcher] Reconcile error:`, e));
+                    });
+                    this.fsWatchers.push(gitWatcher);
+                    console.log(`[OmniKB Git Watcher] Monitoring .git/HEAD for branch checkouts/merges.`);
+                }
+                catch (err) {
+                    console.warn(`[OmniKB Git Watcher] Could not attach git HEAD watcher: ${err?.message}`);
+                }
+            }
         }
         catch (err) {
             console.warn(`[OmniKB Watcher] Native recursive watch warning: ${err?.message}. Falling back to directory walk.`);
             this.watchDirectoriesRecursively(this.config.rootPath);
         }
+    }
+    /**
+     * Performs an immediate atomic reconciliation of all files in the workspace,
+     * detecting any out-of-sync files, mass deletions, or branch changes.
+     */
+    async forceReconcile() {
+        console.log(`[OmniKB Reconcile] Triggering atomic full workspace reconciliation...`);
+        const startTime = Date.now();
+        const diskFiles = this.collectFiles(this.config.rootPath);
+        const diskRelPathSet = new Set();
+        let updatedCount = 0;
+        let deletedCount = 0;
+        // 1. Process all files on disk
+        for (const fullPath of diskFiles) {
+            const relPath = path.relative(this.config.rootPath, fullPath).replace(/\\/g, '/');
+            diskRelPathSet.add(relPath);
+            try {
+                const stats = fs.statSync(fullPath);
+                if (stats.isDirectory())
+                    continue;
+                const content = fs.readFileSync(fullPath, 'utf8');
+                const hash = parser_1.CodeParser.computeHash(content);
+                const existing = this.storage.files.get(relPath);
+                if (!existing || existing.hash !== hash) {
+                    const parseRes = this.parser.parseFile(relPath, content);
+                    const meta = {
+                        path: relPath,
+                        hash,
+                        size: stats.size,
+                        lastModified: stats.mtimeMs,
+                        language: parseRes.language,
+                        nodeCount: parseRes.nodes.length,
+                        edgeCount: parseRes.edges.length,
+                    };
+                    this.storage.updateFileGraph(relPath, meta, parseRes.nodes, parseRes.edges);
+                    updatedCount++;
+                }
+            }
+            catch (err) {
+                console.error(`[OmniKB Reconcile] Failed to reconcile ${relPath}: ${err?.message || err}`);
+            }
+        }
+        // 2. Remove files deleted on disk
+        for (const storedRelPath of Array.from(this.storage.files.keys())) {
+            if (!diskRelPathSet.has(storedRelPath)) {
+                this.storage.removeFileFromGraph(storedRelPath);
+                deletedCount++;
+            }
+        }
+        // 3. Resolve references and persist
+        this.graph.resolveCrossFileReferences();
+        await this.storage.saveToDisk();
+        if (this.config.autoGenerateReport) {
+            await this.reporter.generateMarkdownReport();
+        }
+        if (this.config.autoGenerateVisual) {
+            await this.reporter.generateHtmlVisualizer();
+        }
+        const elapsed = Date.now() - startTime;
+        const finalStats = this.graph.getStats();
+        console.log(`[OmniKB Reconcile] Reconciliation complete in ${elapsed}ms: ${updatedCount} updated, ${deletedCount} removed. (Total nodes: ${finalStats.totalNodes})`);
+        if (this.config.onSyncComplete) {
+            this.config.onSyncComplete(finalStats);
+        }
+        return finalStats;
     }
     /**
      * Stops the active file watchers
