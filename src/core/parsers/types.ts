@@ -51,21 +51,27 @@ export class ParserUtils {
     const callRegex = /(?:(?:\.|\b)([A-Za-z0-9_$]+))\s*\(/g;
     let match: RegExpExecArray | null;
     const seen = new Set<string>();
+    const callerName = callerId.split('#')[1] || callerId;
 
     while ((match = callRegex.exec(body)) !== null) {
       const callee = match[1];
       if (
         [
           'if', 'for', 'while', 'switch', 'catch', 'require', 'import', 'return',
-          'console', 'log', 'error', 'warn', 'info', 'typeof', 'sizeof', 'new'
+          'console', 'log', 'error', 'warn', 'info', 'typeof', 'sizeof', 'new',
+          'def', 'class', 'func', 'fn', 'lambda', 'struct'
         ].includes(callee)
       ) {
         continue;
       }
 
+      const callLine = startLine + this.getLineNumber(body, match.index) - 1;
+      if (callee === callerName && callLine === startLine) {
+        continue;
+      }
+
       if (!seen.has(callee)) {
         seen.add(callee);
-        const callLine = startLine + this.getLineNumber(body, match.index) - 1;
 
         edges.push({
           id: `edge:calls:${callerId}:${callee}:${callLine}`,

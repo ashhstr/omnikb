@@ -35,7 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocalHttpServer = void 0;
 const http = __importStar(require("http"));
-const url = __importStar(require("url"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 class LocalHttpServer {
@@ -64,8 +63,9 @@ class LocalHttpServer {
                     res.end();
                     return;
                 }
-                const parsedUrl = url.parse(req.url || '', true);
-                const pathname = parsedUrl.pathname || '/';
+                const reqUrl = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
+                const pathname = reqUrl.pathname || '/';
+                const query = Object.fromEntries(reqUrl.searchParams.entries());
                 try {
                     // 1. Health check
                     if (pathname === '/v1/health' || pathname === '/') {
@@ -115,47 +115,48 @@ class LocalHttpServer {
                         }
                         return;
                     }
-                    // 6. POST Endpoints (explore, impact, search)
-                    if (req.method === 'POST') {
-                        const body = await this.readBodyJson(req);
-                        if (pathname === '/v1/explore') {
-                            const query = body.query || '';
-                            const maxDepth = body.maxDepth || 3;
-                            const result = this.graph.explore(query, maxDepth);
-                            this.sendJson(res, 200, result);
-                            return;
-                        }
-                        if (pathname === '/v1/impact') {
-                            const target = body.target || '';
-                            const maxDepth = body.maxDepth || 5;
-                            const result = this.graph.calculateImpact(target, maxDepth);
-                            this.sendJson(res, 200, result);
-                            return;
-                        }
-                        if (pathname === '/v1/search') {
-                            const query = body.query || '';
-                            const limit = body.limit || 20;
-                            const result = this.storage.search(query, limit);
-                            this.sendJson(res, 200, result);
-                            return;
-                        }
-                        if (pathname === '/v1/god-nodes') {
-                            const limit = body.limit || 10;
-                            const stats = this.graph.getStats();
-                            this.sendJson(res, 200, {
-                                godNodes: stats.godNodes.slice(0, limit),
-                            });
-                            return;
-                        }
-                        if (pathname === '/v1/sync') {
-                            const stats = await this.watcher.forceReconcile();
-                            this.sendJson(res, 200, {
-                                success: true,
-                                message: 'Workspace successfully reconciled and refreshed',
-                                stats,
-                            });
-                            return;
-                        }
+                    // 6. Action Endpoints (GET with query params or POST with JSON body)
+                    if (pathname === '/v1/explore' && (req.method === 'GET' || req.method === 'POST')) {
+                        const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+                        const q = body.query || query.query || '';
+                        const maxDepth = parseInt(body.maxDepth || query.maxDepth || '3', 10);
+                        const result = this.graph.explore(q, maxDepth);
+                        this.sendJson(res, 200, result);
+                        return;
+                    }
+                    if (pathname === '/v1/impact' && (req.method === 'GET' || req.method === 'POST')) {
+                        const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+                        const target = body.target || query.target || '';
+                        const maxDepth = parseInt(body.maxDepth || query.maxDepth || '5', 10);
+                        const result = this.graph.calculateImpact(target, maxDepth);
+                        this.sendJson(res, 200, result);
+                        return;
+                    }
+                    if (pathname === '/v1/search' && (req.method === 'GET' || req.method === 'POST')) {
+                        const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+                        const q = body.query || query.query || '';
+                        const limit = parseInt(body.limit || query.limit || '20', 10);
+                        const result = this.storage.search(q, limit);
+                        this.sendJson(res, 200, result);
+                        return;
+                    }
+                    if (pathname === '/v1/god-nodes' && (req.method === 'GET' || req.method === 'POST')) {
+                        const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+                        const limit = parseInt(body.limit || query.limit || '10', 10);
+                        const stats = this.graph.getStats();
+                        this.sendJson(res, 200, {
+                            godNodes: stats.godNodes.slice(0, limit),
+                        });
+                        return;
+                    }
+                    if (pathname === '/v1/sync' && (req.method === 'GET' || req.method === 'POST')) {
+                        const stats = await this.watcher.forceReconcile();
+                        this.sendJson(res, 200, {
+                            success: true,
+                            message: 'Workspace successfully reconciled and refreshed',
+                            stats,
+                        });
+                        return;
                     }
                     this.sendJson(res, 404, { error: `Endpoint not found: ${pathname}` });
                 }
@@ -197,7 +198,15 @@ class LocalHttpServer {
     readBodyJson(req) {
         return new Promise((resolve, reject) => {
             let data = '';
+            const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024; // 5MB limit
+            let receivedBytes = 0;
             req.on('data', (chunk) => {
+                receivedBytes += chunk.length;
+                if (receivedBytes > MAX_PAYLOAD_BYTES) {
+                    req.destroy();
+                    reject(new Error('Payload too large: maximum allowed is 5MB'));
+                    return;
+                }
                 data += chunk;
             });
             req.on('end', () => {

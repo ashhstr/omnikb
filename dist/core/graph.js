@@ -44,6 +44,9 @@ class GraphEngine {
         this.workspaceRoot = workspaceRoot;
         this.storage = storage;
     }
+    getWorkspaceRoot() {
+        return this.workspaceRoot;
+    }
     /**
      * Resolves raw symbolic edges (e.g. sym:myFunc) to concrete node IDs
      */

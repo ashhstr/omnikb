@@ -22,6 +22,10 @@ export class GraphEngine {
     this.storage = storage;
   }
 
+  public getWorkspaceRoot(): string {
+    return this.workspaceRoot;
+  }
+
   /**
    * Resolves raw symbolic edges (e.g. sym:myFunc) to concrete node IDs
    */

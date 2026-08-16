@@ -4,6 +4,7 @@ export declare class GraphEngine {
     private storage;
     private workspaceRoot;
     constructor(workspaceRoot: string, storage: KnowledgeStorage);
+    getWorkspaceRoot(): string;
     /**
      * Resolves raw symbolic edges (e.g. sym:myFunc) to concrete node IDs
      */

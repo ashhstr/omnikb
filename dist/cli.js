@@ -53,7 +53,13 @@ function printBanner() {
 async function main() {
     const args = process.argv.slice(2);
     const command = args[0] || 'help';
-    const workspaceRoot = process.cwd();
+    let workspaceRoot = process.cwd();
+    const wsIdxLong = args.indexOf('--workspace');
+    const wsIdxShort = args.indexOf('-w');
+    const wsIndex = wsIdxLong !== -1 ? wsIdxLong : wsIdxShort;
+    if (wsIndex !== -1 && args[wsIndex + 1]) {
+        workspaceRoot = path.resolve(args[wsIndex + 1]);
+    }
     const parser = new parser_1.CodeParser();
     const storage = new storage_1.KnowledgeStorage(workspaceRoot);
     await storage.init();

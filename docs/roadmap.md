@@ -8,6 +8,7 @@ Prioritas kerja terkait OmniKB, opencode, dan skill development. Centang `[x]` s
 - [x] Fix loop watcher (`KNOWLEDGE_BASE.md` ke ignorePatterns)
 - [x] Verifikasi auto-save/auto-update (live probe)
 - [x] Docs hub `docs/` + work-log
+- [x] Workspace scope hardening & Multi-Agent MCP verification
 - [x] Verifikasi ID model HCN Sec: `kat-coder-pro-v2.5`, `Qwen3.8-27B` via `GET https://api.hcnsec.cn/v1beta/models`
 - [ ] Coba pilih model via `/model` (hcnsec/glm-5.2 dsb) & test tool_call
 

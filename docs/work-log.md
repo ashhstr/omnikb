@@ -4,6 +4,44 @@ Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## Y
 
 ---
 
+## 2026-08-16 — Workspace Scope Hardening & Zero-Defect State Verification
+
+- **Problem**: 
+  1. Peluncuran OmniKB MCP server dari client eksternal (Antigravity, Claude Desktop) tanpa argumen `--workspace` dapat menyebabkan pembacaan default `process.cwd()` ke folder instalasi client.
+  2. CLI parser belum mendukung alias singkat `-w <path>`.
+  3. Respon tool MCP `kb_status` dan `initialize` belum mengembalikan informasi path absolut `workspaceRoot` aktif.
+- **Fix**:
+  - `src/core/graph.ts`: Tambah getter `getWorkspaceRoot()` pada `GraphEngine`.
+  - `src/cli.ts`: Dukung flag `-w` dan `--workspace <path>` secara deterministik.
+  - `src/server/mcp-server.ts`: Sertakan path `workspaceRoot` pada instruksi `initialize` dan payload JSON respons tool `kb_status`.
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% bersih.
+  - `npm test`: 8/8 test suites lulus.
+  - `npm run diagnose`: 0 broken edges, 0 missing files, 100% healthy graph.
+  - `npm run precommit`: Seluruh audit security, build, test, dan graph integrity lolos bersih.
+
+## 2026-08-16 — Full Repository Audit & Surgical Fixes (OmniKB 100% Zero-Defect)
+
+- **Problem**:
+  1. Watcher loop risk: `KNOWLEDGE_BASE.md` tidak ada di default `ignorePatterns` pada `src/core/watcher.ts`.
+  2. CLI argument: flag `--workspace <path>` diabaikan oleh `src/cli.ts` sehingga gagal saat dipanggil dari luar cwd.
+  3. Self-referencing edges: `TypeScriptParser` berbasis regex mencocokkan signature deklarasi fungsi sendiri sebagai call (`101` self-edges).
+  4. Multi-language signature match: `ParserUtils.extractCallsFromBody` di Python, Go, Rust mencocokkan deklarasi fungsi pada start line.
+  5. MCP spec compatibility: `mcp-server.ts` belum menangani method `ping` dan `notifications/initialized`.
+  6. HTTP REST API ergonomics: Endpoint `/v1/explore`, `/v1/impact`, `/v1/search`, `/v1/god-nodes` hanya menerima POST body, gagal saat dipanggil via GET query string, serta belum memiliki limit ukuran payload.
+- **Fix**:
+  - `src/core/watcher.ts`: Tambah `'KNOWLEDGE_BASE.md'` ke default `ignorePatterns` dan cek di `shouldIgnore`.
+  - `src/cli.ts`: Parse flag `--workspace` secara absolut.
+  - `src/core/parsers/typescript.ts`: Delegasikan parsing ke `TypeScriptASTExtractor` (TypeScript Compiler API).
+  - `src/core/parsers/types.ts`: Tambah proteksi `callee === callerName && callLine === startLine` pada `extractCallsFromBody`.
+  - `src/server/mcp-server.ts`: Tambah handler `ping` dan `notifications/initialized`.
+  - `src/server/http-server.ts`: Dukung parameter GET query string di semua action endpoint dan tambahkan limit ukuran payload (5MB).
+- **Result**:
+  - `npm run build`: Exit code 0 (bersih).
+  - `npm test`: 8/8 suite PASS 100%.
+  - `npm run diagnose`: 0 broken edges, 0 missing files, self-edges turun dari 101 ke 3 (rekursi murni).
+  - `npm run precommit`: PASS 100% (Security, Build, Tests, Diagnosa bersih).
+
 ## 2026-08-16 — Adaptasi 55 agent ke format opencode native
 
 - **Masalah**: sebagian agent error — model `haiku`/`sonnet` (Claude-only, nggak ada di HCN Sec), `tools: {...}` deprecated, format frontmatter gaya Claude Code yang invalid YAML (description pakai literal `\n` + baris contoh tanpa indent — Claude Code lenient, opencode ketat).

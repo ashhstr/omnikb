@@ -70,6 +70,16 @@ export class McpServer {
     const { method, params, id } = req;
 
     switch (method) {
+      case 'ping':
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {},
+        };
+
+      case 'notifications/initialized':
+        return null;
+
       case 'initialize':
         return {
           jsonrpc: '2.0',
@@ -84,6 +94,7 @@ export class McpServer {
               tools: {},
             },
             instructions: `OmniKB is your pre-indexed real-time Knowledge Base and Code Graph engine.
+- Active Workspace: ${this.graph.getWorkspaceRoot()}
 - Call 'kb_explore' for any structural question ("how does X work", "call flow for Y", or symbol lookup) to get exact source code, caller graph, and blast radius in 1 step.
 - Call 'kb_impact' before refactoring to check all files and routes that depend on a symbol.
 - Call 'kb_search' for instant full-text symbol searches.
@@ -228,7 +239,8 @@ The index auto-syncs continuously on every save.`,
           } else if (toolName === 'kb_status') {
             const stats = this.graph.getStats();
             const pending = this.watcher.getPendingQueue();
-            outputText = JSON.stringify({ stats, pendingQueue: pending }, null, 2);
+            const workspaceRoot = this.graph.getWorkspaceRoot();
+            outputText = JSON.stringify({ workspaceRoot, stats, pendingQueue: pending }, null, 2);
           } else if (toolName === 'kb_sync') {
             const stats = await this.watcher.forceReconcile();
             outputText = JSON.stringify(

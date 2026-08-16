@@ -64,6 +64,7 @@ class WorkspaceWatcher {
                 '.cache',
                 '*.tmp',
                 '*.log',
+                'KNOWLEDGE_BASE.md',
             ],
             ...config,
         };
@@ -387,6 +388,9 @@ class WorkspaceWatcher {
         const normPath = relPath.replace(/\\/g, '/');
         const parts = normPath.split('/');
         const ignoreList = this.config.ignorePatterns || [];
+        if (normPath === 'KNOWLEDGE_BASE.md' || normPath.endsWith('/KNOWLEDGE_BASE.md')) {
+            return true;
+        }
         for (const pattern of ignoreList) {
             if (pattern.startsWith('*.')) {
                 const ext = pattern.slice(1).toLowerCase();
