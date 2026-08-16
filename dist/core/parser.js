@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CodeParser = void 0;
 const crypto = __importStar(require("crypto"));
 const path = __importStar(require("path"));
+const parser_ts_ast_1 = require("./parser-ts-ast");
 class CodeParser {
     /**
      * Detects programming language from file extension
@@ -148,9 +149,23 @@ class CodeParser {
         return { filePath: normPath, language, nodes, edges, contentHash };
     }
     /**
-     * TypeScript & JavaScript AST & structural extraction
+     * TypeScript & JavaScript AST-based structural extraction.
+     * Uses the TypeScript Compiler API for exact extraction (zero false
+     * positives on strings/templates/self-edges), falling back to the legacy
+     * regex pipeline for malformed files.
      */
     parseTypeScriptOrJavaScript(filePath, content, nodes, edges, fileNodeId) {
+        try {
+            const astExtractor = new parser_ts_ast_1.TypeScriptASTExtractor();
+            const result = astExtractor.extract(filePath, content);
+            nodes.push(...result.nodes);
+            edges.push(...result.edges);
+            return;
+        }
+        catch (err) {
+            console.error(`[OmniKB Parser] AST extraction failed for ${filePath}, falling back to regex: ${err?.message || err}`);
+        }
+        // --- Legacy regex fallback (malformed / unsupported syntax) ---
         const lines = content.split('\n');
         // 1. Imports
         // e.g. import { a, b } from './utils';
@@ -667,10 +682,15 @@ class CodeParser {
      * Helper: Extracts function calls from a function's code body
      */
     extractCallsFromBody(body, callerId, filePath, startLine, edges) {
+        // Strip string literals & template literals so regex never matches
+        // code embedded inside strings (kills false positives like Python
+        // fixtures inside JS test files).
+        const cleanBody = this.stripStringLiterals(body);
+        const callerName = callerId.split('#').pop() || callerId;
         const callRegex = /(?:(?:\.|\b)([A-Za-z0-9_$]+))\s*\(/g;
         let match;
         const seen = new Set();
-        while ((match = callRegex.exec(body)) !== null) {
+        while ((match = callRegex.exec(cleanBody)) !== null) {
             const callee = match[1];
             // Ignore common keywords and built-in controls
             if ([
@@ -679,9 +699,14 @@ class CodeParser {
             ].includes(callee)) {
                 continue;
             }
+            // Skip self-referencing calls (e.g. a function calling itself by name
+            // inside its own definition line) - kills self-edges.
+            if (callee === callerName) {
+                continue;
+            }
             if (!seen.has(callee)) {
                 seen.add(callee);
-                const callLine = startLine + this.getLineNumber(body, match.index) - 1;
+                const callLine = startLine + this.getLineNumber(cleanBody, match.index) - 1;
                 edges.push({
                     id: `edge:calls:${callerId}:${callee}:${callLine}`,
                     sourceId: callerId,
@@ -694,6 +719,17 @@ class CodeParser {
                 });
             }
         }
+    }
+    /**
+     * Removes single/double-quoted strings and template literals (including
+     * multi-line ones) from a code body, preserving code structure for regex
+     * call extraction.
+     */
+    stripStringLiterals(body) {
+        return body
+            .replace(/'[^'\\]*(?:\\.[^'\\]*)*'/gs, '""')
+            .replace(/"[^"\\]*(?:\\.[^"\\]*)*"/gs, '""')
+            .replace(/`(?:[^`\\]|\\.)*`/gs, '``');
     }
     getLineNumber(content, charIndex) {
         return content.slice(0, charIndex).split('\n').length;

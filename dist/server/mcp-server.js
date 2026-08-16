@@ -90,16 +90,17 @@ class McpServer {
         this.watcher.stopWatching();
         // 2. Re-initialize storage, graph, reporter for the new directory
         this.workspaceRoot = norm;
-        this.storage = new storage_1.KnowledgeStorage(norm);
-        await this.storage.init();
-        this.graph = new graph_1.GraphEngine(norm, this.storage);
-        this.reporter = new reporter_1.KnowledgeReporter(norm, this.storage, this.graph);
+        const newStorage = new storage_1.KnowledgeStorage(norm);
+        await newStorage.init();
+        this.storage = newStorage;
+        this.graph = new graph_1.GraphEngine(norm, newStorage);
+        this.reporter = new reporter_1.KnowledgeReporter(norm, newStorage, this.graph);
         this.watcher = new watcher_1.WorkspaceWatcher({
             rootPath: norm,
             debounceMs: 400,
             autoGenerateReport: true,
             autoGenerateVisual: true,
-        }, this.parser, this.storage, this.graph, this.reporter);
+        }, this.parser, newStorage, this.graph, this.reporter);
         // 3. Scan the new project and start auto-sync watcher
         await this.watcher.initialScan();
         this.watcher.startWatching();
@@ -214,6 +215,14 @@ The index auto-syncs continuously on every file change.`,
                                             type: 'number',
                                             description: 'Maximum depth for call graph and impact traversal (default: 3).',
                                         },
+                                        includeFullFile: {
+                                            type: 'boolean',
+                                            description: 'When true, returns the entire verbatim source code file containing the target symbol (eliminates compaction context loss).',
+                                        },
+                                        includeImports: {
+                                            type: 'boolean',
+                                            description: 'When true, returns all module imports and imported symbols for the target file.',
+                                        },
                                     },
                                     required: ['query'],
                                 },
@@ -293,7 +302,10 @@ The index auto-syncs continuously on every file change.`,
                 try {
                     let outputText = '';
                     if (toolName === 'kb_explore') {
-                        const res = this.graph.explore(args.query, args.maxDepth || 3);
+                        const res = this.graph.explore(args.query, args.maxDepth || 3, {
+                            includeFullFile: args.includeFullFile,
+                            includeImports: args.includeImports,
+                        });
                         outputText = JSON.stringify(res, null, 2);
                     }
                     else if (toolName === 'kb_impact') {

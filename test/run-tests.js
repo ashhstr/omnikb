@@ -43,16 +43,6 @@ export function formatUser(u: any) {
 app.get('/api/users/:id', getUserHandler);
 `;
 
-    const tsResult = parser.parseFile('src/services/user.ts', tsCode);
-    assert.strictEqual(tsResult.language, 'typescript');
-    assert.ok(tsResult.nodes.some((n) => n.name === 'UserService' && n.kind === 'class'));
-    assert.ok(tsResult.nodes.some((n) => n.name === 'getUser' && n.kind === 'function'));
-    assert.ok(tsResult.nodes.some((n) => n.name === 'formatUser' && n.kind === 'function'));
-    assert.ok(tsResult.nodes.some((n) => n.kind === 'route'));
-    assert.ok(tsResult.edges.some((e) => e.kind === 'imports'));
-    assert.ok(tsResult.edges.some((e) => e.kind === 'calls'));
-    console.log('   ✅ TypeScript parsing passed.');
-
     const pyCode = `
 from app.db import Database
 
@@ -68,6 +58,23 @@ def verify_hash(user, pwd):
 def login_route():
     pass
 `;
+
+    // Write physical files to testWorkspace
+    fs.mkdirSync(path.join(testWorkspace, 'src', 'services'), { recursive: true });
+    fs.writeFileSync(path.join(testWorkspace, 'src', 'services', 'user.ts'), tsCode);
+
+    fs.mkdirSync(path.join(testWorkspace, 'app'), { recursive: true });
+    fs.writeFileSync(path.join(testWorkspace, 'app', 'auth.py'), pyCode);
+
+    const tsResult = parser.parseFile('src/services/user.ts', tsCode);
+    assert.strictEqual(tsResult.language, 'typescript');
+    assert.ok(tsResult.nodes.some((n) => n.name === 'UserService' && n.kind === 'class'));
+    assert.ok(tsResult.nodes.some((n) => n.name === 'getUser' && n.kind === 'function'));
+    assert.ok(tsResult.nodes.some((n) => n.name === 'formatUser' && n.kind === 'function'));
+    assert.ok(tsResult.nodes.some((n) => n.kind === 'route'));
+    assert.ok(tsResult.edges.some((e) => e.kind === 'imports'));
+    assert.ok(tsResult.edges.some((e) => e.kind === 'calls'));
+    console.log('   ✅ TypeScript parsing passed.');
 
     const pyResult = parser.parseFile('app/auth.py', pyCode);
     assert.strictEqual(pyResult.language, 'python');
@@ -166,8 +173,84 @@ def login_route():
     assert.strictEqual(checkDelete.length, 1, 'deleteUser symbol should now exist in index');
     console.log('   ✅ Auto-sync incremental update passed.');
 
-    // 6. Test Dynamic Workspace Switching in MCP Server
-    console.log('6. Testing Dynamic Workspace Switching in McpServer...');
+    // 6. Test Dynamic Full-File Drilldown & Import Inspection (Enhancement 1)
+    console.log('6. Testing Dynamic Full-File Drilldown & Import Inspection...');
+    const drilldownRes = graph.explore('formatUser', 3, {
+      includeFullFile: true,
+      includeImports: true,
+    });
+
+    assert.ok(drilldownRes.fullFileSource, 'fullFileSource should be populated when includeFullFile is true');
+    assert.strictEqual(drilldownRes.fullFileSource.length, 1);
+    assert.strictEqual(drilldownRes.fullFileSource[0].filePath, 'src/services/user.ts');
+    assert.ok(drilldownRes.fullFileSource[0].content.includes('export class UserService'));
+
+    assert.ok(drilldownRes.importedSymbols, 'importedSymbols should be populated when includeImports is true');
+    assert.ok(
+      drilldownRes.importedSymbols.some((imp) => imp.symbols.includes('db')),
+      'Should discover imported db symbol'
+    );
+    console.log('   ✅ Dynamic full-file drilldown & import inspection passed.');
+
+    // 7. Test AST Cross-File Exact Precision (Enhancement 3)
+    console.log('7. Testing AST Exact Cross-File Resolution...');
+    const fileA = `
+import { helperFunc } from './helper';
+export function mainEntry() {
+  return helperFunc();
+}
+`;
+    const fileB = `
+export function helperFunc() {
+  return 'from helper';
+}
+`;
+    fs.writeFileSync(path.join(testWorkspace, 'src', 'main.ts'), fileA);
+    fs.writeFileSync(path.join(testWorkspace, 'src', 'helper.ts'), fileB);
+
+    const resA = parser.parseFile('src/main.ts', fileA);
+    const resB = parser.parseFile('src/helper.ts', fileB);
+
+    storage.updateFileGraph(
+      'src/main.ts',
+      {
+        path: 'src/main.ts',
+        hash: resA.contentHash,
+        size: 100,
+        lastModified: Date.now(),
+        language: 'typescript',
+        nodeCount: resA.nodes.length,
+        edgeCount: resA.edges.length,
+      },
+      resA.nodes,
+      resA.edges
+    );
+
+    storage.updateFileGraph(
+      'src/helper.ts',
+      {
+        path: 'src/helper.ts',
+        hash: resB.contentHash,
+        size: 100,
+        lastModified: Date.now(),
+        language: 'typescript',
+        nodeCount: resB.nodes.length,
+        edgeCount: resB.edges.length,
+      },
+      resB.nodes,
+      resB.edges
+    );
+
+    graph.resolveCrossFileReferences();
+
+    const callEdge = Array.from(storage.edges.values()).find((e) => e.sourceId === 'src/main.ts#mainEntry' && e.kind === 'calls');
+    assert.ok(callEdge, 'Call edge should exist');
+    assert.strictEqual(callEdge.targetId, 'src/helper.ts#helperFunc', 'Should resolve directly to helperFunc in helper.ts');
+    assert.strictEqual(callEdge.confidence, 'exact', 'Confidence must be exact');
+    console.log('   ✅ AST exact cross-file resolution passed.');
+
+    // 8. Test Dynamic Workspace Switching in MCP Server
+    console.log('8. Testing Dynamic Workspace Switching in McpServer...');
     const { McpServer } = require('../dist/server/mcp-server');
     const { WorkspaceWatcher } = require('../dist/core/watcher');
 
@@ -201,7 +284,7 @@ def login_route():
       method: 'tools/call',
       params: {
         name: 'kb_explore',
-        arguments: { query: 'authenticateToken' },
+        arguments: { query: 'authenticateToken', includeFullFile: true },
       },
     });
 
@@ -211,6 +294,7 @@ def login_route():
       parsedExpl.targetNodes.some((n) => n.name === 'authenticateToken'),
       'Should discover symbol in switched workspace'
     );
+    assert.ok(parsedExpl.fullFileSource && parsedExpl.fullFileSource.length > 0, 'Should include full file source');
 
     // Cleanup second workspace
     watcher.stopWatching();

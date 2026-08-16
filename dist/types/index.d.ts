@@ -53,6 +53,10 @@ export interface GraphStats {
     }>;
     lastSyncTime: number;
 }
+export interface ExploreOptions {
+    includeFullFile?: boolean;
+    includeImports?: boolean;
+}
 export interface ExploreResult {
     query: string;
     targetNodes: CodeNode[];
@@ -77,8 +81,23 @@ export interface ExploreResult {
             content: string;
         }>;
     }>;
+    fullFileSource?: Array<{
+        filePath: string;
+        content: string;
+        lineCount: number;
+    }>;
+    importedSymbols?: Array<{
+        sourceFile: string;
+        importedFile: string;
+        symbols: string[];
+    }>;
     relatedDocs?: CodeNode[];
     stalenessWarning?: string;
+}
+export interface ReporterOptions {
+    maxGodNodes?: number;
+    maxFilesPerModule?: number;
+    renderFullTree?: boolean;
 }
 export interface ImpactAnalysis {
     target: string;
@@ -102,5 +121,6 @@ export interface WatcherConfig {
     ignorePatterns?: string[];
     autoGenerateReport?: boolean;
     autoGenerateVisual?: boolean;
+    reporterOptions?: ReporterOptions;
     onSyncComplete?: (stats: GraphStats) => void;
 }

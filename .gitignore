@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build and distribution artifacts (can be built with npm run build)
 # Note: Keep dist/ in git for direct zero-build npx execution if desired, or exclude:

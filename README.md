@@ -35,30 +35,42 @@ OmniKB synthesizes the architectural strengths of four industry-leading open-sou
 ## 🏛️ System Architecture
 
 ```mermaid
-graph TD
-    subgraph Local Workspace
-        A[File Changes: Edit / Save / Delete] -->|Native OS Watcher <500ms| B[Incremental AST Delta Engine]
-        B --> C[(Persistent Local Store: .omnikb/)]
-        C --> D[Graph & Blast Radius Engine]
-        C --> E[Live Auto-Doc: KNOWLEDGE_BASE.md]
+flowchart TD
+    subgraph Core ["🔄 1. Workspace & Auto-Sync Engine"]
+        A["📁 Workspace Files (Edit / Save / Delete)"]
+        A -->|"Native OS Watcher (sub-500ms)"| B["⚙️ AST Delta Parser (TS, Py, Go, Rust, Java...)"]
+        B --> C[("💾 Local Graph DB (.omnikb/)")]
+        C --> D["🧠 Graph Engine & Blast Radius"]
+        C --> E["📄 Live KNOWLEDGE_BASE.md"]
     end
 
-    subgraph Multi-Agent Interfaces
-        D --> F1[Model Context Protocol stdio/SSE]
-        D --> F2[Local HTTP REST API http://127.0.0.1:7890]
-        D --> F3[Interactive Visualizer http://127.0.0.1:7890/visual]
-        D --> F4[Unified CLI: omnikb]
+    subgraph Interfaces ["🔌 2. Universal Access Interfaces"]
+        F1["⚡ Model Context Protocol (stdio/SSE)"]
+        F2["🌐 Local HTTP REST API (:7890)"]
+        F3["📊 HTML Visualizer (:7890/visual)"]
+        F4["💻 Unified CLI (omnikb)"]
     end
 
-    subgraph Supported AI Agents & IDEs
-        F1 --> G1[Google Antigravity]
-        F1 --> G2[Claude Code CLI]
-        F1 --> G3[OpenCode Desktop]
-        F1 --> G4[Cursor & Windsurf IDE]
-        F2 --> G5[OpenAI Codex / Copilot / Aider]
-        F2 --> G6[Python / LangChain / cURL]
-        E --> G7[File-Reader LLMs]
+    subgraph Consumers ["🤖 3. AI Agents & Developer Clients"]
+        subgraph IDEs ["Native MCP Agents"]
+            G1["Google Antigravity"]
+            G2["Claude Code CLI"]
+            G3["OpenCode Desktop"]
+            G4["Cursor & Windsurf"]
+        end
+        subgraph External ["REST / HTTP Clients"]
+            G5["OpenAI Codex / Copilot / Aider"]
+            G6["Python / LangChain / cURL"]
+        end
     end
+
+    D --> F1
+    D --> F2
+    D --> F3
+    D --> F4
+
+    F1 --> IDEs
+    F2 --> External
 ```
 
 ---
@@ -190,7 +202,7 @@ curl -X POST http://127.0.0.1:7890/v1/impact \
 
 | MCP Tool | Description | Key Parameters |
 | :--- | :--- | :--- |
-| **`kb_explore`** | Retrieves verbatim code definition, call paths, callers, and callees in 1 step. | `query` *(string)*, `maxDepth` *(number, default: 3)* |
+| **`kb_explore`** | Retrieves verbatim code definition, call paths, callers, and callees in 1 step. Supports dynamic full-file drilldown to prevent LLM context compaction loss. | `query` *(string)*, `maxDepth` *(number, default: 3)*, `includeFullFile` *(boolean, default: false)*, `includeImports` *(boolean, default: false)* |
 | **`kb_impact`** | Evaluates blast radius, upstream dependents, and breaking risk score. | `target` *(string)*, `maxDepth` *(number, default: 5)* |
 | **`kb_search`** | Inverted index full-text search across all symbols and documentation. | `query` *(string)*, `limit` *(number, default: 20)* |
 | **`kb_architecture`** | Returns total graph metrics, God Nodes (hotspots), and registered API routes. | *(none)* |
