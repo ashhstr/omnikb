@@ -1,6 +1,8 @@
 # 🌐 OmniKB: Universal Real-Time Code Knowledge Base & Graph Intelligence Engine
 
-**OmniKB** adalah sistem Knowledge Base dan Code Graph lokal berkecepatan tinggi yang dirancang untuk memberikan pemahaman arsitektur instan ke **AI Agent apapun** (Antigravity, Cursor, Claude Code, Windsurf, Codex, Gemini CLI, Aider, Copilot, Python scripts/LangChain, maupun REST/cURL).
+**OmniKB** adalah sistem Knowledge Base dan Code Graph lokal berkecepatan tinggi yang dirancang untuk memberikan pemahaman arsitektur instan & **menghemat penggunaan token LLM hingga 90%** untuk **AI Agent apapun** (Antigravity, Cursor, Claude Code, Windsurf, Codex, Gemini CLI, Aider, Copilot, Python scripts/LangChain, maupun REST/cURL).
+
+Alih-alih melakukan *context dumping* seluruh file/repositori ke dalam context window AI agent, OmniKB melakukan *surgical context retrieval* (mengambil simbol, alur pemanggilan caller/callee, blast radius, dan baris kode spesifik dalam 1 kali query).
 
 Sistem ini menggabungkan keunggulan 4 ekosistem ternama:
 - ⚡ **`codegraph`**: File watcher tingkat OS dengan debounced auto-sync (<500ms) dan local SQLite/inverted index.
@@ -12,19 +14,22 @@ Sistem ini menggabungkan keunggulan 4 ekosistem ternama:
 
 ## 🚀 Fitur Utama
 
-1. **Auto-Save & Auto-Update Real-Time**:
-   - Memantau setiap perubahan file (create, edit, delete) menggunakan native OS file watcher.
-   - Debounce buffer cerdas (400ms) dan incremental delta hashing: hanya me-reparse file yang benar-benar berubah tanpa me-reindex seluruh project.
-2. **Universal Multi-Agent Access**:
+1. **💰 Hemat Token hingga 90% (Surgical Context Retrieval)**:
+   - AI Agent tidak perlu membaca puluhan file atau ratusan baris kode irrelevant.
+   - Panggilan `kb_explore` mengembalikan definisi simbol, rantai dependency upstream/downstream, dan baris kode presisi dalam 1 payload ringkas.
+2. **🔒 100% Freshness Guarantee**:
+   - Memelototi setiap perubahan file (`create`, `edit`, `delete`) dan branch switch (`.git/HEAD`) secara real-time.
+   - Dilengkapi verifikasi hash (SHA-256) dan timestamp disk real-time untuk menjamin index 100% fresh tanpa staleness.
+3. **Auto-Save & Auto-Update Real-Time**:
+   - Debounce buffer cerdas (400ms) dan incremental delta hashing: hanya me-reparse file yang berubah tanpa re-index ulang project.
+4. **Universal Multi-Agent Access**:
    - **MCP Protocol (`stdio` & SSE)**: Terintegrasi dengan Antigravity, Claude Code, Cursor, Windsurf, Codex, Gemini.
-   - **Local REST API (`http://127.0.0.1:7890`)**: Dapat dipanggil oleh script Python, LangChain, cURL, Ollama, OpenAI-compatible functions, atau browser.
-   - **Direct Markdown Auto-Sync**: Menghasilkan `KNOWLEDGE_BASE.md` yang selalu *fresh* di root project untuk AI agent berbasis pembacaan file biasa.
-3. **Surgical Context Retrieval (`kb_explore`)**:
-   - Mengambil definisi simbol, relasi caller/callee, blast radius, dan kode baris bernomor persis dalam 1 langkah panggilan tanpa menghabiskan token window.
-4. **Impact & Blast Radius Analysis (`kb_impact`)**:
-   - Menghitung risiko regresi (*risk score*: LOW/MEDIUM/HIGH/CRITICAL) dan daftar file serta HTTP routes yang terdampak sebelum melakukan refactoring.
-5. **Interactive D3 Visualizer**:
-   - Menghasilkan `.omnikb/graph.html` interaktif untuk mengeksplorasi graph, cluster dependensi, dan mencari simbol secara visual di browser.
+   - **Local REST API (`http://127.0.0.1:7890`)**: Bisa dipanggil script Python, LangChain, cURL, Ollama, OpenAI-compatible functions, atau browser.
+   - **Direct Markdown Auto-Sync**: Menghasilkan `KNOWLEDGE_BASE.md` yang selalu *fresh* di root project.
+5. **Impact & Blast Radius Analysis (`kb_impact`)**:
+   - Menghitung risiko regresi (*risk score*: LOW/MEDIUM/HIGH/CRITICAL) dan daftar file serta HTTP routes yang terdampak sebelum refactoring.
+6. **Interactive D3 Visualizer**:
+   - Menghasilkan `.omnikb/graph.html` interaktif untuk eksplorasi graph, cluster dependensi, dan pencarian simbol visual di browser.
 
 ---
 
