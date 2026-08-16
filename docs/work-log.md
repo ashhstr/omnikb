@@ -19,6 +19,7 @@ Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## Y
   - `npm test`: 8/8 test suites lulus.
   - `npm run diagnose`: 0 broken edges, 0 missing files, 100% healthy graph.
   - `npm run precommit`: Seluruh audit security, build, test, dan graph integrity lolos bersih.
+  - `npm run release -- mayor`: Sukses rilis resmi **v1.4.0** ke GitHub (`ashhstr/omnikb`), tag & CHANGELOG.md ter-publish.
 
 ## 2026-08-16 — Full Repository Audit & Surgical Fixes (OmniKB 100% Zero-Defect)
 
