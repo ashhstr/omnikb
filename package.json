@@ -11,7 +11,8 @@
     "watch": "tsc -w",
     "start": "node dist/cli.js serve",
     "test": "node test/run-tests.js",
-    "index": "node scripts/index-workspace.js"
+    "index": "node scripts/index-workspace.js",
+    "benchmark": "node scripts/benchmark-tokens.js"
   },
   "repository": {
     "type": "git",

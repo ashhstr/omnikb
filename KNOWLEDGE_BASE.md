@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T10:15:44.301Z | **Indexed Files**: 43 | **Total Symbols**: 200 | **Call & Dependency Edges**: 1012
+> **Auto-Updated**: 2026-08-16T10:36:13.351Z | **Indexed Files**: 44 | **Total Symbols**: 202 | **Call & Dependency Edges**: 1084
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `43` |
-| **Functions & Methods** | `95` |
+| **Source Files** | `44` |
+| **Functions & Methods** | `96` |
 | **Classes & Interfaces** | `36` |
 | **Web Routes / API Endpoints** | `0` |
-| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 2`, `typescript: 16` |
+| **Languages** | `unknown: 7`, `markdown: 10`, `json: 8`, `javascript: 3`, `typescript: 16` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -20,12 +20,12 @@ The most referenced and interconnected symbols in this repository:
 | :--- | :--- | :--- | :--- | :--- |
 | **`runTests`** | `test/run-tests.js` | **121** | 3 | 118 |
 | **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
+| **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
 | **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
 | **`start`** | `src/server/http-server.ts` | **44** | 4 | 40 |
 | **`initialScan`** | `src/core/watcher.ts` | **26** | 8 | 18 |
 | **`switchWorkspace`** | `src/server/mcp-server.ts` | **23** | 7 | 16 |
 | **`parseFile`** | `src/core/parser.ts` | **22** | 10 | 12 |
-| **`processPendingChanges`** | `src/core/watcher.ts` | **22** | 4 | 18 |
 
 ## 4. Module Map & Component Directory
 
@@ -36,17 +36,18 @@ The most referenced and interconnected symbols in this repository:
 - **`SECURITY.md`**: `5 symbols`
 - **`tsconfig.json`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
-- **`README.md`**: `1 symbols`
-- **`package.json`**: `1 symbols`
 - **`.gitignore`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
+- **`package.json`**: `1 symbols`
+- **`README.md`**: `1 symbols`
 
-### `/scripts` (5 files)
+### `/scripts` (6 files)
 - **`scripts/install-startup.vbs`**: `1 symbols`
 - **`scripts/omnikb-silent.vbs`**: `1 symbols`
 - **`scripts/omnikb-startup.bat`**: `1 symbols`
 - **`scripts/omnikb.sh`**: `1 symbols`
 - **`scripts/index-workspace.js`**: `2 symbols`
+- **`scripts/benchmark-tokens.js`**: `2 symbols`
 
 ### `/examples` (6 files)
 - **`examples/configs/antigravity.mcp.json`**: `1 symbols`
