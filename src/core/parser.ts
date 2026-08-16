@@ -6,6 +6,12 @@ import { TypeScriptParser } from './parsers/typescript';
 import { PythonParser } from './parsers/python';
 import { GoParser } from './parsers/go';
 import { RustParser } from './parsers/rust';
+import { DartParser } from './parsers/dart';
+import { SFCParser } from './parsers/sfc';
+import { PrismaParser } from './parsers/prisma';
+import { SqlDdlParser } from './parsers/sql';
+import { JvmParser } from './parsers/jvm';
+import { PhpParser } from './parsers/php';
 import { MarkdownParser, CStyleGenericParser } from './parsers/generic';
 
 export interface ParseResult {
@@ -25,6 +31,12 @@ export class CodeParser {
       new PythonParser(),
       new GoParser(),
       new RustParser(),
+      new DartParser(),
+      new SFCParser(),
+      new PrismaParser(),
+      new SqlDdlParser(),
+      new JvmParser(),
+      new PhpParser(),
       new MarkdownParser(),
       new CStyleGenericParser(),
     ];
@@ -53,6 +65,19 @@ export class CodeParser {
         return 'go';
       case '.rs':
         return 'rust';
+      case '.dart':
+        return 'dart';
+      case '.vue':
+        return 'vue';
+      case '.svelte':
+        return 'svelte';
+      case '.prisma':
+        return 'prisma';
+      case '.sql':
+        return 'sql';
+      case '.kt':
+      case '.kts':
+        return 'kotlin';
       case '.java':
         return 'java';
       case '.cs':
@@ -77,8 +102,6 @@ export class CodeParser {
       case '.yaml':
       case '.yml':
         return 'yaml';
-      case '.sql':
-        return 'sql';
       default:
         return 'unknown';
     }

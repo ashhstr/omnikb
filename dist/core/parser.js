@@ -40,6 +40,12 @@ const typescript_1 = require("./parsers/typescript");
 const python_1 = require("./parsers/python");
 const go_1 = require("./parsers/go");
 const rust_1 = require("./parsers/rust");
+const dart_1 = require("./parsers/dart");
+const sfc_1 = require("./parsers/sfc");
+const prisma_1 = require("./parsers/prisma");
+const sql_1 = require("./parsers/sql");
+const jvm_1 = require("./parsers/jvm");
+const php_1 = require("./parsers/php");
 const generic_1 = require("./parsers/generic");
 class CodeParser {
     parsers;
@@ -49,6 +55,12 @@ class CodeParser {
             new python_1.PythonParser(),
             new go_1.GoParser(),
             new rust_1.RustParser(),
+            new dart_1.DartParser(),
+            new sfc_1.SFCParser(),
+            new prisma_1.PrismaParser(),
+            new sql_1.SqlDdlParser(),
+            new jvm_1.JvmParser(),
+            new php_1.PhpParser(),
             new generic_1.MarkdownParser(),
             new generic_1.CStyleGenericParser(),
         ];
@@ -76,6 +88,19 @@ class CodeParser {
                 return 'go';
             case '.rs':
                 return 'rust';
+            case '.dart':
+                return 'dart';
+            case '.vue':
+                return 'vue';
+            case '.svelte':
+                return 'svelte';
+            case '.prisma':
+                return 'prisma';
+            case '.sql':
+                return 'sql';
+            case '.kt':
+            case '.kts':
+                return 'kotlin';
             case '.java':
                 return 'java';
             case '.cs':
@@ -100,8 +125,6 @@ class CodeParser {
             case '.yaml':
             case '.yml':
                 return 'yaml';
-            case '.sql':
-                return 'sql';
             default:
                 return 'unknown';
         }

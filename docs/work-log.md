@@ -4,6 +4,25 @@ Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## Y
 
 ---
 
+## 2026-08-16 — Multi-Language Expansion Engine (6 New Dedicated Parsers)
+
+- **Problem**: OmniKB membutuhkan dedicated parser tingkat lanjut untuk ekosistem Mobile (Dart/Flutter), Modern Frontend SFC (Vue/Svelte), Database Relational Graph (Prisma, SQL DDL), dan Enterprise Backend (Java/Kotlin Spring, PHP Laravel).
+- **Fix**:
+  - `src/core/parsers/dart.ts`: Dedicated Dart/Flutter parser (StatelessWidget/StatefulWidget, lifecycle `build`, Riverpod/Provider, GoRoute).
+  - `src/core/parsers/sfc.ts`: Vue/Svelte Single File Component parser dengan delegasi TypeScript AST extractor pada blok `<script>`.
+  - `src/core/parsers/prisma.ts`: Prisma schema parser memetakan `model`, `enum`, dan relasi `@relation` menjadi relational reference graph.
+  - `src/core/parsers/sql.ts`: SQL DDL parser memetakan `CREATE TABLE` dan `FOREIGN KEY ... REFERENCES` menjadi graph entity database.
+  - `src/core/parsers/jvm.ts`: Dedicated Java & Kotlin parser dengan deteksi annotation Spring Boot HTTP routes (`@RestController`, `@GetMapping`).
+  - `src/core/parsers/php.ts`: Dedicated PHP & Laravel parser dengan ekstraksi `Route::get/post` dan relasi Eloquent (`hasMany`, `belongsTo`).
+  - `src/core/parser.ts`: Registrasi seluruh parser ke multi-language dispatcher.
+  - `test/run-tests.js`: Penambahan 6 skenario test suite untuk seluruh parser baru (10/10 bahasa lulus 100%).
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% bersih.
+  - `npm test`: 8/8 suites & 10/10 parser tests PASS.
+  - `npm run diagnose`: 0 broken edges, 0 missing files, 249 nodes, 1424 edges (100% healthy).
+  - `npm run benchmark-tokens`: Efisiensi penghematan token mencapai **81.64%**.
+  - `npm run precommit`: Seluruh audit security, build, test, dan graph integrity lolos bersih.
+
 ## 2026-08-16 — Workspace Scope Hardening & Zero-Defect State Verification
 
 - **Problem**: 

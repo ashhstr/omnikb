@@ -1,56 +1,64 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-16T15:39:04.304Z | **Indexed Files**: 49 | **Total Symbols**: 221 | **Call & Dependency Edges**: 1280
+> **Auto-Updated**: 2026-08-16T15:48:08.733Z | **Indexed Files**: 64 | **Total Symbols**: 267 | **Call & Dependency Edges**: 1483
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `49` |
-| **Functions & Methods** | `87` |
-| **Classes & Interfaces** | `42` |
+| **Source Files** | `64` |
+| **Functions & Methods** | `99` |
+| **Classes & Interfaces** | `48` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `markdown: 11`, `json: 8`, `javascript: 8`, `typescript: 22` |
+| **Languages** | `unknown: 7`, `markdown: 13`, `json: 8`, `javascript: 8`, `typescript: 28` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
 The most referenced and interconnected symbols in this repository:
 
-| Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls | PageRank |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.028` |
-| **`ILanguageParser`** | `src/core/parsers/types.ts` | **7** | 7 | 0 | `0.0221` |
-| **`getLineNumber`** | `src/core/parsers/types.ts` | **14** | 14 | 0 | `0.0197` |
-| **`tokenize`** | `src/core/storage.ts` | **3** | 3 | 0 | `0.0173` |
-| **`parse`** | `src/core/parsers/generic.ts` | **20** | 9 | 11 | `0.0154` |
-| **`visit`** | `src/core/parser-ts-ast.ts` | **72** | 5 | 67 | `0.0151` |
-| **`collectCallExpressions`** | `src/core/parser-ts-ast.ts` | **18** | 7 | 11 | `0.0135` |
-| **`calculatePageRank`** | `src/core/graph.ts` | **6** | 2 | 4 | `0.013` |
+| Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls |
+| :--- | :--- | :--- | :--- | :--- |
+| **`runTests`** | `test/run-tests.js` | **226** | 3 | 223 |
+| **`visit`** | `src/core/parser-ts-ast.ts` | **74** | 7 | 67 |
+| **`runBenchmark`** | `scripts/benchmark-tokens.js` | **68** | 1 | 67 |
+| **`main`** | `src/cli.ts` | **68** | 1 | 67 |
+| **`start`** | `src/server/http-server.ts` | **57** | 5 | 52 |
+| **`walkDeclarations`** | `src/core/parser-ts-ast.ts` | **44** | 4 | 40 |
+| **`runBenchmark`** | `test/benchmark-token-savings.js` | **42** | 1 | 41 |
+| **`initialScan`** | `src/core/watcher.ts` | **29** | 8 | 21 |
 
 ## 3. Web & API Route Registry
 
 | HTTP Method & Route | File Definition |
 | :--- | :--- |
-| `GET src/services/user.ts` | `test/run-tests.js:260` |
+| `GET src/services/user.ts` | `test/run-tests.js:410` |
 
 ## 4. Module Map & Component Directory
 
-### `/root` (7 files)
-- **`AGENTS.md`**: `15 symbols`
-- **`CONTRIBUTING.md`**: `9 symbols`
-- **`package-lock.json`**: `1 symbols`
-- **`package.json`**: `1 symbols`
-- **`README.md`**: `1 symbols`
+### `/root` (12 files)
+- **`LICENSE`**: `1 symbols`
+- **`.npmignore`**: `1 symbols`
+- **`KNOWLEDGE_BASE.md`**: `11 symbols`
 - **`SECURITY.md`**: `5 symbols`
 - **`tsconfig.json`**: `1 symbols`
+- **`package-lock.json`**: `1 symbols`
+- **`README.md`**: `1 symbols`
+- **`.gitignore`**: `1 symbols`
+- **`CONTRIBUTING.md`**: `9 symbols`
+- **`AGENTS.md`**: `15 symbols`
+- *(and 2 more files)*
 
-### `/docs` (6 files)
-- **`docs/README.md`**: `1 symbols`
-- **`docs/release-and-commit-rules.md`**: `11 symbols`
-- **`docs/roadmap.md`**: `1 symbols`
-- **`docs/skill-library.md`**: `1 symbols`
-- **`docs/sop-opencode-provider.md`**: `1 symbols`
-- **`docs/work-log.md`**: `1 symbols`
+### `/scripts` (10 files)
+- **`scripts/install-startup.vbs`**: `1 symbols`
+- **`scripts/omnikb-silent.vbs`**: `1 symbols`
+- **`scripts/omnikb-startup.bat`**: `1 symbols`
+- **`scripts/omnikb.sh`**: `1 symbols`
+- **`scripts/index-workspace.js`**: `2 symbols`
+- **`scripts/benchmark-tokens.js`**: `2 symbols`
+- **`scripts/supervisor.js`**: `2 symbols`
+- **`scripts/diagnose.js`**: `1 symbols`
+- **`scripts/pre-commit.js`**: `1 symbols`
+- **`scripts/release.js`**: `2 symbols`
 
 ### `/examples` (6 files)
 - **`examples/configs/antigravity.mcp.json`**: `1 symbols`
@@ -60,26 +68,26 @@ The most referenced and interconnected symbols in this repository:
 - **`examples/configs/opencode.json`**: `1 symbols`
 - **`examples/configs/windsurf.mcp.json`**: `1 symbols`
 
-### `/scripts` (6 files)
-- **`scripts/benchmark-tokens.js`**: `2 symbols`
-- **`scripts/diagnose.js`**: `1 symbols`
-- **`scripts/index-workspace.js`**: `2 symbols`
-- **`scripts/pre-commit.js`**: `1 symbols`
-- **`scripts/release.js`**: `2 symbols`
-- **`scripts/supervisor.js`**: `2 symbols`
-
-### `/src` (22 files)
-- **`src/cli.ts`**: `3 symbols`
-- **`src/core/graph.ts`**: `10 symbols`
+### `/src` (28 files)
+- **`src/integrations/context7.ts`**: `6 symbols`
 - **`src/core/parser-ts-ast.ts`**: `14 symbols`
-- **`src/core/parser.ts`**: `6 symbols`
-- **`src/core/parsers/generic.ts`**: `5 symbols`
-- **`src/core/parsers/go.ts`**: `4 symbols`
+- **`src/core/storage-types.ts`**: `4 symbols`
+- **`src/integrations/graphify.ts`**: `5 symbols`
+- **`src/integrations/index.ts`**: `1 symbols`
+- **`src/integrations/codegraph.ts`**: `5 symbols`
+- **`src/integrations/gitnexus.ts`**: `5 symbols`
 - **`src/core/parsers/python.ts`**: `5 symbols`
+- **`src/core/parsers/go.ts`**: `4 symbols`
 - **`src/core/parsers/rust.ts`**: `4 symbols`
-- **`src/core/parsers/types.ts`**: `7 symbols`
-- **`src/core/parsers/typescript.ts`**: `4 symbols`
-- *(and 12 more files)*
+- *(and 18 more files)*
+
+### `/docs` (6 files)
+- **`docs/README.md`**: `1 symbols`
+- **`docs/sop-opencode-provider.md`**: `1 symbols`
+- **`docs/skill-library.md`**: `1 symbols`
+- **`docs/release-and-commit-rules.md`**: `11 symbols`
+- **`docs/work-log.md`**: `1 symbols`
+- **`docs/roadmap.md`**: `1 symbols`
 
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`

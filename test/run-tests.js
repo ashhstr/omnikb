@@ -141,6 +141,156 @@ pub fn run_engine(e: &Engine) {
     assert.ok(rustResult.edges.some((e) => e.kind === 'implements'));
     console.log('   ✅ Rust parsing passed.');
 
+    // 1.5 Dart / Flutter
+    const dartCode = `
+import 'package:flutter/material.dart';
+
+class ProfileScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+
+final userCounterProvider = StateNotifierProvider((ref) => 0);
+GoRoute(path: '/user/profile', builder: (c, s) => ProfileScreen());
+`;
+    const dartResult = parser.parseFile('lib/screens/profile.dart', dartCode);
+    assert.strictEqual(dartResult.language, 'dart');
+    assert.ok(dartResult.nodes.some((n) => n.name === 'ProfileScreen' && n.kind === 'class'));
+    assert.ok(dartResult.nodes.some((n) => n.name === 'build' && n.kind === 'function'));
+    assert.ok(dartResult.nodes.some((n) => n.name === 'userCounterProvider' && n.kind === 'variable'));
+    assert.ok(dartResult.nodes.some((n) => n.kind === 'route'));
+    assert.ok(dartResult.edges.some((e) => e.kind === 'imports'));
+    console.log('   ✅ Dart & Flutter parsing passed.');
+
+    // 1.6 Vue SFC
+    const vueCode = `
+<script setup lang="ts">
+import { ref } from 'vue';
+import HeaderBar from './HeaderBar.vue';
+
+const count = ref(0);
+function increment() {
+  count.value++;
+}
+</script>
+<template>
+  <div>{{ count }}</div>
+</template>
+`;
+    const vueResult = parser.parseFile('src/components/Counter.vue', vueCode);
+    assert.strictEqual(vueResult.language, 'vue');
+    assert.ok(vueResult.nodes.some((n) => n.name === 'Counter' && n.kind === 'class'));
+    assert.ok(vueResult.nodes.some((n) => n.name === 'increment' && n.kind === 'function'));
+    assert.ok(vueResult.edges.some((e) => e.kind === 'imports'));
+    console.log('   ✅ Vue / Svelte SFC parsing passed.');
+
+    // 1.7 Prisma Schema
+    const prismaCode = `
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  posts Post[]
+}
+
+model Post {
+  id       Int  @id @default(autoincrement())
+  title    String
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+`;
+    const prismaResult = parser.parseFile('prisma/schema.prisma', prismaCode);
+    assert.strictEqual(prismaResult.language, 'prisma');
+    assert.ok(prismaResult.nodes.some((n) => n.name === 'User' && n.kind === 'class'));
+    assert.ok(prismaResult.nodes.some((n) => n.name === 'Post' && n.kind === 'class'));
+    assert.ok(prismaResult.nodes.some((n) => n.name === 'Role' && n.kind === 'type'));
+    assert.ok(prismaResult.edges.some((e) => e.kind === 'references' && e.targetName === 'User'));
+    console.log('   ✅ Prisma relational schema parsing passed.');
+
+    // 1.8 SQL DDL
+    const sqlCode = `
+CREATE TABLE users (
+  id INT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE orders (
+  id INT PRIMARY KEY,
+  user_id INT,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+`;
+    const sqlResult = parser.parseFile('migrations/init.sql', sqlCode);
+    assert.strictEqual(sqlResult.language, 'sql');
+    assert.ok(sqlResult.nodes.some((n) => n.name === 'users' && n.kind === 'class'));
+    assert.ok(sqlResult.nodes.some((n) => n.name === 'orders' && n.kind === 'class'));
+    assert.ok(sqlResult.edges.some((e) => e.kind === 'references' && e.targetName === 'users'));
+    console.log('   ✅ SQL DDL relational parsing passed.');
+
+    // 1.9 Java & Kotlin (JVM)
+    const javaCode = `
+package com.example.demo;
+
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1")
+public class ProductController extends BaseController {
+    @GetMapping("/products")
+    public List<Product> listProducts() {
+        return getService().findAll();
+    }
+}
+`;
+    const javaResult = parser.parseFile('src/main/java/ProductController.java', javaCode);
+    assert.strictEqual(javaResult.language, 'java');
+    assert.ok(javaResult.nodes.some((n) => n.name === 'ProductController' && n.kind === 'class'));
+    assert.ok(javaResult.nodes.some((n) => n.name === 'listProducts' && n.kind === 'function'));
+    assert.ok(javaResult.nodes.some((n) => n.kind === 'route' && n.name.includes('/api/v1/products')));
+    console.log('   ✅ Java & Kotlin (JVM / Spring Boot) parsing passed.');
+
+    // 1.10 PHP & Laravel
+    const phpCode = `
+<?php
+namespace App\\Http\\Controllers;
+
+use App\\Models\\Post;
+use Illuminate\\Support\\Facades\\Route;
+
+Route::get('/blog/posts', [PostController::class, 'index']);
+
+class PostController extends Controller {
+    public function index() {
+        return Post::all();
+    }
+}
+
+class User extends Model {
+    public function posts() {
+        return $this->hasMany(Post::class);
+    }
+}
+`;
+    const phpResult = parser.parseFile('app/Http/Controllers/PostController.php', phpCode);
+    assert.strictEqual(phpResult.language, 'php');
+    assert.ok(phpResult.nodes.some((n) => n.name === 'PostController' && n.kind === 'class'));
+    assert.ok(phpResult.nodes.some((n) => n.name === 'index' && n.kind === 'function'));
+    assert.ok(phpResult.nodes.some((n) => n.kind === 'route' && n.name.includes('/blog/posts')));
+    assert.ok(phpResult.edges.some((e) => e.kind === 'references' && e.targetName === 'Post'));
+    console.log('   ✅ PHP & Laravel parsing passed.');
+
     // 2. Test Storage and Inverted Search Index
     console.log('2. Testing KnowledgeStorage & Inverted Index...');
     const storage = new KnowledgeStorage(testWorkspace);
