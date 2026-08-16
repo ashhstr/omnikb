@@ -1,70 +1,69 @@
 # 🌐 OmniKB: Universal Real-Time Code Knowledge Base & Graph Intelligence Engine
 
-**OmniKB** adalah sistem Knowledge Base dan Code Graph lokal berkecepatan tinggi yang dirancang untuk memberikan pemahaman arsitektur instan & **menghemat penggunaan token LLM hingga 90%** untuk **AI Agent apapun** (Antigravity, Cursor, Claude Code, Windsurf, Codex, Gemini CLI, Aider, Copilot, Python scripts/LangChain, maupun REST/cURL).
+**OmniKB** is a high-speed local Knowledge Base and Code Graph engine engineered to deliver instant architectural context while **saving up to 90%+ LLM token usage** for **any AI Agent** (Antigravity, Cursor, Claude Code, Windsurf, Codex, Gemini CLI, Aider, Copilot, Python scripts/LangChain, or REST/cURL).
 
-Alih-alih melakukan *context dumping* seluruh file/repositori ke dalam context window AI agent, OmniKB melakukan *surgical context retrieval* (mengambil simbol, alur pemanggilan caller/callee, blast radius, dan baris kode spesifik dalam 1 kali query).
+Instead of *context dumping* entire files or directories into the LLM context window, OmniKB performs **Surgical Context Retrieval** (fetching exact symbol definitions, caller/callee execution paths, blast radius, and line-numbered verbatim source code in a single 1-step query).
 
-Sistem ini menggabungkan keunggulan 4 ekosistem ternama:
-- ⚡ **`codegraph`**: File watcher tingkat OS dengan debounced auto-sync (<500ms) dan local SQLite/inverted index.
-- 🕸️ **`GitNexus`**: Zero-server Graph RAG, cross-file reference resolution, dan kalkulasi *blast radius*.
-- 📊 **`graphify`**: Deteksi arsitektur (*God Nodes* / *high coupling*), dokumentasi multimodal, dan visualizer interaktif D3/SVG standalone.
-- 🎯 **`context7`**: Protokol injeksi context dinamis melalui MCP, REST API lokal, CLI, dan markdown auto-save.
+OmniKB combines the core strengths of 4 renowned ecosystems:
+- ⚡ **`codegraph`**: OS-native file watcher with debounced auto-sync (<500ms) and local SQLite/inverted indexing.
+- 🕸️ **`GitNexus`**: Zero-server Graph RAG, cross-file reference resolution, and blast radius risk evaluation.
+- 📊 **`graphify`**: Architecture bottleneck detection (*God Nodes* / *high coupling*), multimodal documentation, and standalone D3 interactive visualizer.
+- 🎯 **`context7`**: Dynamic context injection protocol via MCP, local REST API, CLI, and auto-syncing markdown.
 
 ---
 
-## 🚀 Fitur Utama
+## 🚀 Key Features
 
-1. **💰 Hemat Token hingga 90% (Surgical Context Retrieval)**:
-   - AI Agent tidak perlu membaca puluhan file atau ratusan baris kode irrelevant.
-   - Panggilan `kb_explore` mengembalikan definisi simbol, rantai dependency upstream/downstream, dan baris kode presisi dalam 1 payload ringkas.
+1. **💰 Up to 90%+ Token Savings (Surgical Context Retrieval)**:
+   - AI Agents no longer need to consume irrelevant files or entire codebase dumps.
+   - Calling `kb_explore` returns exact symbol signatures, upstream/downstream call chains, and verbatim lines in a compact single payload.
 2. **🔒 100% Freshness Guarantee**:
-   - Memelototi setiap perubahan file (`create`, `edit`, `delete`) dan branch switch (`.git/HEAD`) secara real-time.
-   - Dilengkapi verifikasi hash (SHA-256) dan timestamp disk real-time untuk menjamin index 100% fresh tanpa staleness.
-3. **Auto-Save & Auto-Update Real-Time**:
-   - Debounce buffer cerdas (400ms) dan incremental delta hashing: hanya me-reparse file yang berubah tanpa re-index ulang project.
+   - Real-time monitoring of all file mutations (`create`, `edit`, `delete`) and branch checkouts (`.git/HEAD`).
+   - Equipped with real-time SHA-256 content hashing and disk timestamp verification to ensure zero-staleness.
+3. **Real-Time Auto-Save & Auto-Update**:
+   - Intelligent 400ms debounce buffer and incremental delta hashing: re-parses only modified files without full project re-indexing.
 4. **Universal Multi-Agent Access**:
-   - **MCP Protocol (`stdio` & SSE)**: Terintegrasi dengan Antigravity, Claude Code, Cursor, Windsurf, Codex, Gemini.
-   - **Local REST API (`http://127.0.0.1:7890`)**: Bisa dipanggil script Python, LangChain, cURL, Ollama, OpenAI-compatible functions, atau browser.
-   - **Direct Markdown Auto-Sync**: Menghasilkan `KNOWLEDGE_BASE.md` yang selalu *fresh* di root project.
+   - **MCP Protocol (`stdio` & SSE)**: Seamless integration with Antigravity, Claude Code, Cursor, Windsurf, Codex, Gemini.
+   - **Local REST API (`http://127.0.0.1:7890`)**: Easily queryable from Python, LangChain, cURL, Ollama, OpenAI-compatible tools, or browsers.
+   - **Direct Markdown Auto-Sync**: Generates a live, self-updating `KNOWLEDGE_BASE.md` at the project root for file-reading agents.
 5. **Impact & Blast Radius Analysis (`kb_impact`)**:
-   - Menghitung risiko regresi (*risk score*: LOW/MEDIUM/HIGH/CRITICAL) dan daftar file serta HTTP routes yang terdampak sebelum refactoring.
+   - Calculates regression risk (*risk score*: LOW/MEDIUM/HIGH/CRITICAL) and lists all affected files and HTTP routes before refactoring.
 6. **Interactive D3 Visualizer**:
-   - Menghasilkan `.omnikb/graph.html` interaktif untuk eksplorasi graph, cluster dependensi, dan pencarian simbol visual di browser.
+   - Generates `.omnikb/graph.html` for interactive browser-based visual exploration of code graphs, dependency clusters, and symbols.
 
 ---
 
-## 📊 Benchmark Efisiensi Token & Speed (v1.3.0)
+## 📊 Token Efficiency & Speed Benchmark (v1.3.0)
 
-Pengujian dilakukan menggunakan pengukur token empiris pada repository OmniKB:
+Empirical benchmark measured directly on the OmniKB codebase:
 
-| Metode Retrieval Context | Payload Size | Est. Tokens | Efisiensi / Token Savings Rate |
+| Context Retrieval Method | Payload Size | Est. Tokens | Efficiency / Token Savings Rate |
 | :--- | :--- | :--- | :--- |
-| **Naive Full Context Dump** (Membaca seluruh file di `/src`) | **108.590 Bytes** | **~28.577 Tokens** | `0%` *(Baseline)* |
-| **OmniKB `kb_explore` (`CodeParser`)** | **13.264 Bytes** | **~3.491 Tokens** | **`87,78%` Savings** |
-| **OmniKB `kb_explore` (`checkFreshness`)** | **22.742 Bytes** | **~5.985 Tokens** | **`79,06%` Savings** |
-| **OmniKB `kb_explore` (`calculateImpact`)** | **29.885 Bytes** | **~7.865 Tokens** | **`72,48%` Savings** |
-| **OmniKB `kb_search` (FTS Inverted Index)** | **~3.200 Bytes** | **~840 Tokens** | **`97,06%` Savings** |
-| **Rata-Rata Context Retrieval** | **~29.000 Bytes** | **~7.630 Tokens** | **`73,30%` Savings (Repo Kecil)** |
+| **Naive Full Context Dump** (Reading all files in `/src`) | **108,590 Bytes** | **~28,577 Tokens** | `0%` *(Baseline)* |
+| **OmniKB `kb_explore` (`CodeParser`)** | **13,264 Bytes** | **~3,491 Tokens** | **`87.78%` Savings** |
+| **OmniKB `kb_explore` (`checkFreshness`)** | **22,742 Bytes** | **~5,985 Tokens** | **`79.06%` Savings** |
+| **OmniKB `kb_explore` (`calculateImpact`)** | **29,885 Bytes** | **~7,865 Tokens** | **`72.48%` Savings** |
+| **OmniKB `kb_search` (FTS Inverted Index)** | **~3,200 Bytes** | **~840 Tokens** | **`97.06%` Savings** |
+| **Average Context Retrieval** | **~29,000 Bytes** | **~7,630 Tokens** | **`73.30%` Savings (Small Repo)** |
 
-> 📌 **Skalabilitas Codebase Besar**: Di codebase skala menengah hingga besar (100–500+ file / 1–5 MB source code = ~250.000–1.250.000 tokens), payload `kb_explore` OmniKB tetap stabil di **~3.000 – 10.000 Tokens**, sehingga **Token Savings Rate mencapai >90% hingga 96.8%**.
+> 📌 **Large Codebase Scalability**: On medium-to-large codebases (100–500+ files / 1–5 MB source code = ~250,000–1,250,000 tokens), OmniKB's `kb_explore` payload remains stable at **~3,000 – 10,000 Tokens**, yielding **Token Savings Rates of >90% up to 96.8%**.
 
-Untuk menjalankan benchmark secara mandiri:
+To run the benchmark locally:
 ```bash
 node test/benchmark-token-savings.js
 ```
 
 ---
 
-## 📦 Cara Menjalankan
+## 📦 Getting Started
 
-
-### 1. Inisialisasi Proyek
+### 1. Initialize Workspace
 ```bash
 node dist/cli.js init
 ```
-Perintah ini akan memindai workspace, membangun index awal, membuat file `.omnikb/knowledge-graph.json`, `.omnikb/graph.html`, dan `KNOWLEDGE_BASE.md`.
+This scans the workspace, builds the initial knowledge graph, and generates `.omnikb/knowledge-graph.json`, `.omnikb/graph.html`, and `KNOWLEDGE_BASE.md`.
 
-### 2. Menjalankan Server Universal (MCP + REST API + Auto-Watcher)
+### 2. Start Universal Server (MCP + REST API + Auto-Watcher)
 ```bash
 node dist/cli.js serve --port 7890
 ```
@@ -72,27 +71,27 @@ node dist/cli.js serve --port 7890
 - **Interactive Visualizer**: `http://127.0.0.1:7890/visual`
 - **Live Markdown**: `KNOWLEDGE_BASE.md`
 
-### 3. Perintah CLI Tambahan
+### 3. Additional CLI Commands
 ```bash
-# Eksplorasi simbol kode (caller, callee, verbatim code)
+# Explore symbol context (callers, callees, verbatim code)
 node dist/cli.js explore calculateImpact
 
-# Periksa blast radius sebelum refactor
+# Inspect blast radius before refactoring
 node dist/cli.js impact storage.ts
 
-# Cari simbol / teks dengan index FTS
+# Fast symbol & text search via FTS index
 node dist/cli.js search "parser"
 
-# Mode watcher saja di terminal
+# Watcher mode only (background auto-sync)
 node dist/cli.js watch
 ```
 
 ---
 
-## 🔌 Panduan Integrasi ke Berbagai AI Agent
+## 🔌 AI Agent Integration Guide
 
-### 1. Integrasi MCP (Antigravity, Cursor, Claude Code, Windsurf)
-Tambahkan ke konfigurasi MCP Anda (`mcp.json` / `settings.json`):
+### 1. MCP Integration (Antigravity, Cursor, Claude Code, Windsurf)
+Add to your MCP configuration (`mcp.json` / `settings.json`):
 
 ```json
 {
@@ -105,19 +104,19 @@ Tambahkan ke konfigurasi MCP Anda (`mcp.json` / `settings.json`):
 }
 ```
 
-**Daftar Tool MCP yang Tersedia:**
-- `kb_explore(query, maxDepth)`: Mengambil konteks bedah simbol dan alur kode dalam 1 kali call (dilengkapi `freshness` metadata & hash verifikasi).
-- `kb_impact(target, maxDepth)`: Menganalisis risiko perubahan dan file/route yang terdampak.
-- `kb_search(query, limit)`: Pencarian token simbol dan teks super cepat.
-- `kb_architecture()`: Mendapatkan metrik arsitektur, God Nodes, dan route map.
-- `kb_status()`: Memeriksa status real-time file watcher dan antrean sinkronisasi.
-- `kb_sync(force)`: Memaksa rekonsiliasi atomik seluruh workspace untuk garansi 100% *freshness*.
+**Available MCP Tools:**
+- `kb_explore(query, maxDepth)`: Surgical 1-step symbol context exploration (includes `freshness` metadata & verification hash).
+- `kb_impact(target, maxDepth)`: Blast radius & change risk analysis for refactoring.
+- `kb_search(query, limit)`: Inverted index fast symbol & keyword search.
+- `kb_architecture()`: Repository-level metrics, God Nodes, and route maps.
+- `kb_status()`: Real-time file watcher status and pending sync queue.
+- `kb_sync(force)`: Forces atomic workspace reconciliation for a 100% freshness guarantee.
 
 ---
 
-### 2. Integrasi Local REST API (Python, LangChain, cURL, AI Custom)
+## 🔌 Local REST API Integration (Python, LangChain, cURL)
 
-**Endpoint yang Tersedia di `http://127.0.0.1:7890`:**
+**Available Endpoints on `http://127.0.0.1:7890`:**
 
 #### A. Explore Symbol (`POST /v1/explore`)
 ```bash
@@ -138,12 +137,12 @@ curl -X POST http://127.0.0.1:7890/v1/impact \
 curl -X POST http://127.0.0.1:7890/v1/sync
 ```
 
-#### D. Ambil Prompt Context Siap Pakai (`GET /v1/context`)
+#### D. Fetch Ready-to-Use Prompt Context (`GET /v1/context`)
 ```bash
 curl http://127.0.0.1:7890/v1/context
 ```
 
-#### D. Python Example (RAG / Agent Hook)
+#### E. Python Example (RAG / Agent Hook)
 ```python
 import requests
 
@@ -158,13 +157,13 @@ print("Blast Radius:", context["impactRadius"])
 
 ---
 
-### 3. Integrasi Agen Berbasis File (Aider / Chat LLM Standar)
-Setiap kali Anda atau AI mengedit kode, file `KNOWLEDGE_BASE.md` di root direktori akan **langsung terupdate otomatis** oleh watcher. Agen yang hanya membaca file dapat langsung membaca `KNOWLEDGE_BASE.md` untuk memahami struktur seluruh repositori tanpa perlu tool khusus.
+### 3. File-Based AI Agents (Aider / Standard LLM Chat)
+Whenever you or an AI edit code, `KNOWLEDGE_BASE.md` at the project root is **automatically updated in real-time** by the watcher. File-reading agents can directly read `KNOWLEDGE_BASE.md` to understand the architecture of the repository without requiring special tools.
 
 ---
 
-## 🧪 Verifikasi & Testing
-Jalankan unit test suite mandiri:
+## 🧪 Testing & Verification
+Run the automated test suite:
 ```bash
 node test/run-tests.js
 ```
