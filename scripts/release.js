@@ -105,13 +105,50 @@ const updatedChangelog = currentChangelog.replace('# OmniKB Changelog\n', `# Omn
 fs.writeFileSync(changelogPath, updatedChangelog, 'utf8');
 console.log('3. Updated CHANGELOG.md');
 
-// Git commit & tag
+function getGhCommand() {
+  try {
+    execSync('gh --version', { stdio: 'ignore' });
+    return 'gh';
+  } catch {
+    const stdPath = 'C:\\Program Files\\GitHub CLI\\gh.exe';
+    if (fs.existsSync(stdPath)) return `"${stdPath}"`;
+    return null;
+  }
+}
+
+// Git commit & tag & GitHub CLI Release
 try {
+  console.log('4. Staging and committing release files...');
   execSync('git add package.json CHANGELOG.md', { cwd: rootDir });
   execSync(`git commit -m "chore(release): v${newVersion}"`, { cwd: rootDir, stdio: 'inherit' });
   execSync(`git tag -a "v${newVersion}" -m "Release v${newVersion}"`, { cwd: rootDir, stdio: 'inherit' });
-  console.log(`\n🎉 Successfully released v${newVersion}!`);
-  console.log(`Run "git push origin main --tags" to publish to remote repository.`);
+  console.log('   ✅ Git commit & tag created.');
+
+  console.log('5. Pushing to GitHub (origin main --tags)...');
+  execSync('git push origin main --tags', { cwd: rootDir, stdio: 'inherit' });
+  console.log('   ✅ Git push completed.');
+
+  const ghCmd = getGhCommand();
+  if (ghCmd) {
+    console.log('6. Creating official GitHub Release via GitHub CLI (gh)...');
+    const releaseTitle = `v${newVersion} — ${deskripsiKategori}`;
+    const notesFile = path.join(rootDir, '.release-notes.tmp');
+    fs.writeFileSync(notesFile, changelogEntry.trim(), 'utf8');
+
+    try {
+      execSync(`${ghCmd} release create "v${newVersion}" --title "${releaseTitle}" --notes-file "${notesFile}"`, {
+        cwd: rootDir,
+        stdio: 'inherit',
+      });
+      console.log(`   ✅ GitHub Release v${newVersion} published successfully!`);
+    } finally {
+      if (fs.existsSync(notesFile)) fs.unlinkSync(notesFile);
+    }
+  } else {
+    console.log('ℹ️  GitHub CLI (gh) not found in PATH. Push completed, create release manually if desired.');
+  }
+
+  console.log(`\n🎉 Successfully released and published v${newVersion} to GitHub!`);
 } catch (err) {
-  console.error('Git commit/tagging failed:', err.message);
+  console.error('Git/GitHub release execution failed:', err.message);
 }
