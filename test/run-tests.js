@@ -341,10 +341,41 @@ class User extends Model {
       goResult.edges
     );
 
+    // 2.1 Test Tokenizer constituent word extraction
+    const symTokens1 = KnowledgeStorage.tokenizeSymbol('getUserProfile');
+    assert.ok(symTokens1.includes('get') && symTokens1.includes('user') && symTokens1.includes('profile'));
+
+    const symTokens2 = KnowledgeStorage.tokenizeSymbol('verify_hash_pwd');
+    assert.ok(symTokens2.includes('verify') && symTokens2.includes('hash') && symTokens2.includes('pwd'));
+
+    const symTokens3 = KnowledgeStorage.tokenizeSymbol('parseAST');
+    assert.ok(symTokens3.includes('parse') && symTokens3.includes('ast'));
+
+    const symTokens4 = KnowledgeStorage.tokenizeSymbol('user-profile-card');
+    assert.ok(symTokens4.includes('user') && symTokens4.includes('profile') && symTokens4.includes('card'));
+
+    // 2.2 Test Inverted Index & Single / Multi-word Search
     const searchRes = storage.search('formatUser', 5);
     assert.ok(searchRes.length > 0, 'Search for formatUser should return results');
     assert.strictEqual(searchRes[0].nodes[0].name, 'formatUser');
-    console.log('   ✅ Storage & Symbol search passed.');
+    assert.strictEqual(searchRes[0].matchType, 'exact_name');
+    assert.ok(searchRes[0].score >= 100, 'Exact symbol match should receive score >= 100');
+
+    // 2.3 Test multi-word query ranking
+    const multiSearch = storage.search('auth manager', 5);
+    assert.ok(multiSearch.length > 0, 'Multi-word search for auth manager should return results');
+    assert.strictEqual(multiSearch[0].nodes[0].name, 'AuthManager');
+
+    // 2.4 Test constituent token search (e.g. search 'format' finds 'formatUser')
+    const tokenSearch = storage.search('format', 5);
+    assert.ok(tokenSearch.some((r) => r.nodes[0].name === 'formatUser'));
+
+    // 2.5 Test buildInvertedIndex() rebuild
+    storage.buildInvertedIndex();
+    const afterRebuild = storage.search('getUser', 5);
+    assert.ok(afterRebuild.some((r) => r.nodes[0].name === 'getUser'));
+
+    console.log('   ✅ Storage, Inverted Index & Semantic Ranking search passed.');
 
     // 3. Test GraphEngine & PageRank Centrality
     console.log('3. Testing GraphEngine & PageRank Centrality...');
@@ -512,6 +543,27 @@ class User extends Model {
         });
       };
 
+      const makeGetRequest = (path, headers = {}) => {
+        return new Promise((resolve, reject) => {
+          const req = http.request(
+            {
+              hostname: '127.0.0.1',
+              port: testPort,
+              path,
+              method: 'GET',
+              headers,
+            },
+            (res) => {
+              let data = '';
+              res.on('data', (chunk) => (data += chunk));
+              res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, body: data }));
+            }
+          );
+          req.on('error', reject);
+          req.end();
+        });
+      };
+
       // 8.1 REST API explore endpoint (for ChatGPT / Python Agents / Codex)
       const restExplore = await makePostRequest('/v1/explore', { query: 'deleteUser', maxDepth: 2 });
       assert.ok(restExplore.targetNodes && restExplore.targetNodes.length > 0);
@@ -523,6 +575,34 @@ class User extends Model {
       // 8.3 REST API god-nodes endpoint
       const restGodNodes = await makePostRequest('/v1/god-nodes', { limit: 3 });
       assert.ok(Array.isArray(restGodNodes.godNodes));
+
+      // 8.4 REST API /v1/graph/data endpoint (for Visualizer 2.0 dynamic feed)
+      const graphDataRes = await makeGetRequest('/v1/graph/data');
+      assert.strictEqual(graphDataRes.statusCode, 200);
+      const parsedGraphData = JSON.parse(graphDataRes.body);
+      assert.ok(Array.isArray(parsedGraphData.nodes), 'graph/data must return nodes array');
+      assert.ok(Array.isArray(parsedGraphData.edges), 'graph/data must return edges array');
+      assert.ok(Array.isArray(parsedGraphData.godNodes), 'graph/data must return godNodes array');
+      assert.ok(parsedGraphData.stats && typeof parsedGraphData.stats.totalNodes === 'number', 'graph/data must return stats');
+      assert.ok(parsedGraphData.activeWorkspace, 'graph/data must return activeWorkspace');
+
+      // 8.5 REST API /v1/graph/impact GET endpoint
+      const graphImpactRes = await makeGetRequest('/v1/graph/impact?target=deleteUser&depth=3');
+      assert.strictEqual(graphImpactRes.statusCode, 200);
+      const parsedGraphImpact = JSON.parse(graphImpactRes.body);
+      assert.ok(parsedGraphImpact.riskScore, 'graph/impact must calculate risk score');
+      assert.ok(parsedGraphImpact.summary.includes('deleteUser'), 'graph/impact summary must reference target');
+
+      // 8.6 Modern Visualizer 2.0 UI endpoint (/visual and /)
+      const visualRes = await makeGetRequest('/visual');
+      assert.strictEqual(visualRes.statusCode, 200);
+      assert.ok(visualRes.body.includes('OmniKB Visualizer 2.0'), 'Visualizer HTML must contain title');
+      assert.ok(visualRes.body.includes('d3.v7.min.js'), 'Visualizer HTML must include D3.js');
+
+      const rootRes = await makeGetRequest('/');
+      assert.strictEqual(rootRes.statusCode, 200);
+      assert.ok(rootRes.body.includes('OmniKB Visualizer 2.0'), 'Root endpoint must serve Visualizer HTML');
+
       console.log('   ✅ Multi-Agent REST API & Protocol endpoints passed.');
     } finally {
       await httpServer.stop();
@@ -645,7 +725,58 @@ class User extends Model {
     manager.dispose();
     console.log('   ✅ WorkspaceManager & Multi-Workspace MCP tools passed.');
 
-    console.log('\n🎉 ALL 10 TEST SUITES PASSED SUCCESSFULLY! 100% Zero-Bug, Multi-Workspace Verified.\n');
+    // 11. Testing Automated Blast Radius CI/CD Scanner (omnikb audit-impact & impact-check)
+    console.log('11. Testing Automated Blast Radius CI/CD Scanner (omnikb audit-impact & impact-check)...');
+    const { spawnSync } = require('child_process');
+    const cliPath = path.join(__dirname, '..', 'dist', 'cli.js');
+    const impactCheckPath = path.join(__dirname, '..', 'scripts', 'impact-check.js');
+
+    // 11.1 Test audit-impact passing on Low risk
+    const auditPass = spawnSync(
+      process.execPath,
+      [cliPath, 'audit-impact', 'CodeParser', '--max-risk', 'CRITICAL', '--json'],
+      { cwd: path.join(__dirname, '..'), encoding: 'utf8' }
+    );
+    assert.strictEqual(auditPass.status, 0, 'audit-impact must exit with 0 when risk is below threshold');
+    const parsedPass = JSON.parse(auditPass.stdout.trim());
+    assert.strictEqual(parsedPass.passed, true);
+    assert.strictEqual(parsedPass.target, 'CodeParser');
+
+    // 11.2 Test audit-impact failing on threshold violation
+    const auditFail = spawnSync(
+      process.execPath,
+      [cliPath, 'audit-impact', 'calculateImpact', '--max-risk', 'LOW', '--json'],
+      { cwd: path.join(__dirname, '..'), encoding: 'utf8' }
+    );
+    assert.strictEqual(auditFail.status, 1, 'audit-impact must exit with 1 when risk exceeds threshold');
+    const parsedFail = JSON.parse(auditFail.stdout.trim());
+    assert.strictEqual(parsedFail.passed, false);
+    assert.ok(['MEDIUM', 'HIGH', 'CRITICAL'].includes(parsedFail.riskScore));
+
+    // 11.3 Test standalone impact-check.js script
+    const checkPass = spawnSync(
+      process.execPath,
+      [impactCheckPath, 'CodeParser', '--max-risk', 'CRITICAL', '--json'],
+      { cwd: path.join(__dirname, '..'), encoding: 'utf8' }
+    );
+    assert.strictEqual(checkPass.status, 0, 'impact-check.js must exit 0 for passing risk check');
+    const parsedCheckPass = JSON.parse(checkPass.stdout.trim());
+    assert.strictEqual(parsedCheckPass.passed, true);
+    assert.strictEqual(parsedCheckPass.totalAudited, 1);
+
+    const checkFail = spawnSync(
+      process.execPath,
+      [impactCheckPath, 'calculateImpact', '--max-risk', 'LOW', '--json'],
+      { cwd: path.join(__dirname, '..'), encoding: 'utf8' }
+    );
+    assert.strictEqual(checkFail.status, 1, 'impact-check.js must exit 1 for risk violation');
+    const parsedCheckFail = JSON.parse(checkFail.stdout.trim());
+    assert.strictEqual(parsedCheckFail.passed, false);
+    assert.strictEqual(parsedCheckFail.failedCount, 1);
+
+    console.log('   ✅ Automated Blast Radius CI/CD Scanner & scripts/impact-check.js passed.');
+
+    console.log('\n🎉 ALL 11 TEST SUITES PASSED SUCCESSFULLY! 100% Zero-Bug, CI/CD Gate Verified.\n');
   } finally {
     if (fs.existsSync(testWorkspace)) {
       fs.rmSync(testWorkspace, { recursive: true, force: true });

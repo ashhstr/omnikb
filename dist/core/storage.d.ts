@@ -41,17 +41,54 @@ export declare class KnowledgeStorage {
      */
     removeFileFromGraph(filePath: string): void;
     /**
-     * Fast full-text & symbol token search
+     * Rebuilds all inverted indexes (symbolIndex, fileNodesIndex, fileEdgesIndex, tokenIndex)
+     * from the current in-memory nodes and edges with enriched tokenization.
+     */
+    buildInvertedIndex(): void;
+    /**
+     * Enhanced Multi-Factor Composite Relevance Search.
+     * Supports multi-word queries, constituent word tokenization (camelCase, PascalCase, snake_case, kebab-case),
+     * exact/case-insensitive/prefix/substring symbol matching, kind-based boosting, and file path boosting.
+     *
+     * Scoring Engine Rules:
+     * - Exact symbol name match: +100 points
+     * - Case-insensitive exact name match: +60 points
+     * - Symbol name prefix match: +30 points
+     * - Symbol name substring match: +15 points
+     * - Token matching via inverted index: +5 points per matching token weighted by frequency
+     * - Kind/Type boost: class/interface (+15), function/method (+10), route (+12), type (+8)
+     * - File path boost if term matches directory/filename (+10)
+     *
+     * @param query Search string query (multi-word supported)
+     * @param limit Maximum number of results to return (default 10)
      */
     search(query: string, limit?: number): SearchResult[];
     /**
      * Find nodes matching symbol name
      */
     findNodesByName(name: string): CodeNode[];
+    /**
+     * Deconstructs a symbol name into its constituent word tokens.
+     * Handles camelCase, PascalCase, snake_case, kebab-case, and acronym boundaries.
+     * Example:
+     *   "getUserProfile" -> ["get", "user", "profile", "getuserprofile"]
+     *   "KnowledgeStorage" -> ["knowledge", "storage", "knowledgestorage"]
+     *   "verify_hash_pwd" -> ["verify", "hash", "pwd", "verifyhashpwd"]
+     *   "parseAST" -> ["parse", "ast", "parseast"]
+     */
+    static tokenizeSymbol(name: string): string[];
+    /**
+     * Tokenizes arbitrary text or code snippets into semantic constituent tokens.
+     */
+    tokenize(text: string): string[];
+    /**
+     * Extracts all constituent tokens for a CodeNode from its name, signature,
+     * content snippet, docstring, and file path.
+     */
+    extractNodeTokens(node: CodeNode): string[];
     private insertNodeInMemory;
     private insertEdgeInMemory;
     private indexNodeTokens;
     private removeNodeTokens;
-    private tokenize;
     private clearInMemory;
 }

@@ -20,6 +20,14 @@ async function main() {
   const args = process.argv.slice(2);
   const command = args[0] || 'help';
 
+  const isJsonMode = args.includes('--json') || ['explore', 'impact', 'search'].includes(command);
+  const isMcp = args.includes('--mcp') || !process.stdout.isTTY;
+
+  // If JSON mode or MCP mode, redirect standard console.log to stderr so stdout is never corrupted
+  if (isJsonMode || isMcp) {
+    console.log = (...logArgs: any[]) => console.error(...logArgs);
+  }
+
   const registry = new WorkspaceRegistry();
   const manager = new WorkspaceManager(registry);
 
@@ -89,6 +97,7 @@ async function main() {
           console.log(`     Path: ${ws.rootPath}\n`);
         }
       }
+      manager.dispose();
       break;
     }
 
@@ -171,9 +180,9 @@ async function main() {
         console.error('Error: Please provide a symbol name to explore. Example: omnikb explore calculateImpact');
         process.exit(1);
       }
-      const instance = await manager.resolveInstance(wsIndex !== -1 ? workspaceRoot : undefined);
+      const instance = await manager.resolveInstance(workspaceRoot);
       const result = instance.graph.explore(query, 3);
-      console.log(JSON.stringify(result, null, 2));
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
       manager.dispose();
       break;
     }
@@ -184,10 +193,116 @@ async function main() {
         console.error('Error: Please provide a symbol/file to check impact. Example: omnikb impact storage.ts');
         process.exit(1);
       }
-      const instance = await manager.resolveInstance(wsIndex !== -1 ? workspaceRoot : undefined);
+      const instance = await manager.resolveInstance(workspaceRoot);
       const result = instance.graph.calculateImpact(target, 5);
-      console.log(JSON.stringify(result, null, 2));
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
       manager.dispose();
+      break;
+    }
+
+    case 'audit-impact': {
+      let target: string | undefined;
+      let maxRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'HIGH';
+      let depth = 5;
+      let isJson = false;
+
+      for (let i = 1; i < args.length; i++) {
+        const arg = args[i];
+        if (arg === '--json') {
+          isJson = true;
+        } else if (arg === '--max-risk' && args[i + 1]) {
+          const val = args[i + 1].toUpperCase();
+          if (['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(val)) {
+            maxRisk = val as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+          }
+          i++;
+        } else if (arg.startsWith('--max-risk=')) {
+          const val = arg.split('=')[1].toUpperCase();
+          if (['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(val)) {
+            maxRisk = val as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+          }
+        } else if (arg === '--depth' && args[i + 1]) {
+          const parsed = parseInt(args[i + 1], 10);
+          if (!isNaN(parsed) && parsed > 0) depth = parsed;
+          i++;
+        } else if (arg.startsWith('--depth=')) {
+          const parsed = parseInt(arg.split('=')[1], 10);
+          if (!isNaN(parsed) && parsed > 0) depth = parsed;
+        } else if (arg === '--workspace' || arg === '-w') {
+          i++; // skip workspace value
+        } else if (!arg.startsWith('-') && !target) {
+          target = arg;
+        }
+      }
+
+      if (!target) {
+        if (isJson) {
+          console.error(JSON.stringify({ error: 'Please provide a target symbol or file to audit impact.' }));
+        } else {
+          console.error('Error: Please provide a symbol or file to audit impact.');
+          console.error('Usage: omnikb audit-impact <target> [--max-risk <LOW|MEDIUM|HIGH|CRITICAL>] [--depth <number>] [--json]');
+        }
+        process.exit(1);
+      }
+
+      const instance = await manager.resolveInstance(workspaceRoot);
+      const result = instance.graph.calculateImpact(target, depth);
+
+      const RISK_LEVELS: Record<string, number> = {
+        LOW: 1,
+        MEDIUM: 2,
+        HIGH: 3,
+        CRITICAL: 4,
+      };
+
+      const currentRiskVal = RISK_LEVELS[result.riskScore] || 1;
+      const maxRiskVal = RISK_LEVELS[maxRisk] || 3;
+      const passed = currentRiskVal <= maxRiskVal;
+
+      if (isJson) {
+        process.stdout.write(JSON.stringify({
+          passed,
+          maxAllowedRisk: maxRisk,
+          ...result,
+        }, null, 2) + '\n');
+      } else {
+        printBanner();
+        if (passed) {
+          console.log(`✅ [OmniKB Audit Impact] PASSED (Risk: ${result.riskScore} <= Max Allowed: ${maxRisk})`);
+          console.log(`   - Target: ${result.target}`);
+          console.log(`   - Direct Callers: ${result.directCallers.length}`);
+          console.log(`   - Transitive Callers: ${result.transitiveCallers.length}`);
+          console.log(`   - Affected Files (${result.affectedFiles.length}):`);
+          result.affectedFiles.slice(0, 10).forEach((f) => console.log(`     • ${f}`));
+          if (result.affectedFiles.length > 10) {
+            console.log(`     ... and ${result.affectedFiles.length - 10} more file(s)`);
+          }
+          if (result.affectedRoutes.length > 0) {
+            console.log(`   - Affected Routes (${result.affectedRoutes.length}):`);
+            result.affectedRoutes.forEach((r) => console.log(`     • [${r.name}] ${r.filePath}`));
+          }
+          console.log(`   - Summary: ${result.summary}\n`);
+        } else {
+          console.error(`🚨 [OmniKB Audit Impact] FAILED: Blast radius risk threshold exceeded!`);
+          console.error(`   - Target: ${result.target}`);
+          console.error(`   - Calculated Risk: ${result.riskScore} (Allowed Maximum: ${maxRisk})`);
+          console.error(`   - Direct Callers: ${result.directCallers.length}`);
+          console.error(`   - Transitive Callers: ${result.transitiveCallers.length}`);
+          console.error(`   - Affected Files (${result.affectedFiles.length}):`);
+          result.affectedFiles.forEach((f) => console.error(`     • ${f}`));
+          if (result.affectedRoutes.length > 0) {
+            console.error(`   - Affected Routes (${result.affectedRoutes.length}):`);
+            result.affectedRoutes.forEach((r) => console.error(`     • [${r.name}] ${r.filePath}`));
+          }
+          console.error(`   - Summary: ${result.summary}`);
+          console.error(`\n❌ CI/CD Gate Failed: Blast radius exceeds maximum risk policy (${result.riskScore} > ${maxRisk}).\n`);
+        }
+      }
+
+      manager.dispose();
+      if (!passed) {
+        process.exit(1);
+      }
       break;
     }
 
@@ -197,9 +312,9 @@ async function main() {
         console.error('Error: Please provide a search query. Example: omnikb search "parse"');
         process.exit(1);
       }
-      const instance = await manager.resolveInstance(wsIndex !== -1 ? workspaceRoot : undefined);
+      const instance = await manager.resolveInstance(workspaceRoot);
       const result = instance.storage.search(query, 10);
-      console.log(JSON.stringify(result, null, 2));
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
       manager.dispose();
       break;
     }
@@ -244,6 +359,7 @@ async function main() {
       console.log(`  serve [--port] [--mcp]     Run real-time multi-workspace server + MCP stdio`);
       console.log(`  explore <symbol>           Explore symbol context, callers, callees, and code`);
       console.log(`  impact <symbol>            Calculate blast radius and affected files`);
+      console.log(`  audit-impact <target>      Audit blast radius in CI/CD pipeline against max allowed risk`);
       console.log(`  search <query>             Search symbols and tokens across knowledge base`);
       console.log(`  report                     Re-generate KNOWLEDGE_BASE.md`);
       console.log(`  visual                     Re-generate .omnikb/graph.html visualizer`);

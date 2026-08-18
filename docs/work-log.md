@@ -2,6 +2,47 @@
 
 Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## YYYY-MM-DD — <judul>`). Jangan hapus entri lama tanpa alasan.
 
+## 2026-08-18 — Inverted Index & Semantic Token Ranking Engine Upgrade
+
+- **Problem**: 
+  1. Tokenisasi simbol kode sebelumnya bersifat naif (hanya pemecahan regex dasar), tidak mengekstrak konstituen kata dari camelCase, PascalCase, snake_case, kebab-case, dan akronim (misal `getUserProfile` -> `get`, `user`, `profile`; `parseAST` -> `parse`, `ast`).
+  2. Search scoring sebelumnya hanya memberikan flat score tanpa mempertimbangkan composite relevance multi-faktor (exact match vs case-insensitive match vs prefix/substring match, token frequency weighting, kind boost, dan file path boosting) serta dukungan query multi-kata (seperti "storage impact", "parse AST").
+- **Fix**:
+  - `src/core/storage.ts`:
+    - Mengimplementasikan `KnowledgeStorage.tokenizeSymbol(name)` untuk mendekonstruksi simbol menjadi token konstituen kata lengkap untuk camelCase, PascalCase, snake_case, kebab-case, dan akronim.
+    - Mengimplementasikan `buildInvertedIndex()` dan `extractNodeTokens(node)` untuk memperkaya pemetaan token-to-symbol in-memory (`tokenIndex`, `symbolIndex`, `fileNodesIndex`, `fileEdgesIndex`).
+    - Meng-upgrade `search(query, limit = 10)` dengan multi-factor composite relevance engine:
+      - Exact symbol name match: +100 poin.
+      - Case-insensitive exact match: +60 poin.
+      - Symbol name prefix match: +30 poin.
+      - Symbol name substring match: +15 poin.
+      - Token matching via inverted index: +5 poin per matching token berbobot frekuensi (`5 * Math.min(freq, 10)`).
+      - Kind/Type boost: `class`/`interface` (+15), `function`/`method` (+10), `route` (+12), `type` (+8).
+      - File path boost jika term query cocok dengan direktori/nama file (+10).
+      - Pengurutan descending berdasarkan composite score dan capping sesuai `limit`.
+  - `src/core/storage-types.ts`: Menambahkan method opsional `buildInvertedIndex?(): void` pada interface `IKnowledgeStorage`.
+  - `test/run-tests.js`: Memperluas Test Suite 2 untuk menguji tokenisasi konstituen simbol, pencarian multi-kata ("auth manager"), pencarian token konstituen ("format" -> "formatUser"), dan verifikasi rebuild `buildInvertedIndex()`.
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% PASS (0 errors, exit code 0).
+  - `npm test`: 11/11 test suites PASS 100% tanpa defect.
+  - `npm run diagnose`: 574 unique nodes, 3.174 edges, 115 files, 0 broken edges, 0 missing files (100% Healthy).
+
+- **Problem**: 
+  1. CI/CD pipeline membutuhkan mekanisme otomatis untuk mengaudit blast radius dari perubahan kode (simbol / file yang dimodifikasi) terhadap kebijakan risiko maksimum (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+  2. Ketiadaan CLI command mandiri dan helper script yang dapat mendeteksi perubahan git secara otomatis dan menghentikan build/merge (exit code 1) jika blast radius melampaui toleransi risiko.
+- **Fix**:
+  - `src/cli.ts`: Menambahkan command `audit-impact <target> [--max-risk <LOW|MEDIUM|HIGH|CRITICAL>] [--depth <number>] [--json]`. Mengevaluasi skor risiko perubahan terhadap ambang batas toleransi (LOW=1, MEDIUM=2, HIGH=3, CRITICAL=4), mengeluarkan exit code 0 untuk passed dan exit code 1 untuk violation, serta menyematkannya ke banner bantuan CLI (`printBanner`/`printHelp`).
+  - `scripts/impact-check.js`: Membuat helper script mandiri untuk CI/CD yang secara otomatis mendeteksi file kode yang berubah dari git working tree (`git diff` / `git status`), menjalankan audit blast radius untuk setiap file, dan menghasilkan ringkasan visual dan JSON report.
+  - `package.json`: Menambahkan script `"impact-check": "node scripts/impact-check.js"`.
+  - `test/run-tests.js`: Menambahkan Suite 11 untuk memverifikasi CLI `audit-impact` dan `impact-check.js` (passing cases, threshold violation failure, and JSON output formatting).
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% PASS (0 errors, exit code 0).
+  - `npm test`: 11/11 test suites PASS 100% tanpa defect.
+  - `npm run diagnose`: 570 nodes, 3.127 edges, 115 files, 0 broken edges, 0 missing files (100% Healthy).
+  - `npm run impact-check`: Berjalan sukses memvalidasi target perubahan kode dengan status PASS/FAIL yang akurat.
+
+---
+
 ## 2026-08-18 — Workspace Auto-Discovery Non-Existent Path Guard & Synthesis Report Line Sync
 
 - **Problem**: 

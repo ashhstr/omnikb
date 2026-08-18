@@ -15,6 +15,7 @@
     "start": "node dist/cli.js",
     "test": "node test/run-tests.js",
     "diagnose": "node scripts/diagnose.js",
+    "impact-check": "node scripts/impact-check.js",
     "release": "node scripts/release.js",
     "precommit": "node scripts/pre-commit.js",
     "benchmark-tokens": "node test/benchmark-token-savings.js"

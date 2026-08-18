@@ -10,6 +10,10 @@ export declare class KnowledgeReporter {
      */
     generateMarkdownReport(outputPath?: string): Promise<string>;
     /**
+     * Renders the modern interactive HTML Graph Visualizer Dashboard 2.0
+     */
+    static renderVisualizerHtml(embeddedData?: any): string;
+    /**
      * Generates interactive standalone HTML Graph visualizer (graph.html)
      */
     generateHtmlVisualizer(outputPath?: string): Promise<string>;

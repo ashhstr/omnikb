@@ -27,6 +27,7 @@ export interface IKnowledgeStorage extends IKnowledgeGraphReader {
     saveToDisk(): Promise<void>;
     updateFileGraph(filePath: string, meta: FileMetadata, newNodes: CodeNode[], newEdges: CodeEdge[]): void;
     removeFileFromGraph(filePath: string): void;
+    buildInvertedIndex?(): void;
 }
 /**
  * Extended read access for analytics/reporting consumers (GraphEngine,

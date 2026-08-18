@@ -178,62 +178,221 @@ export class KnowledgeStorage {
   }
 
   /**
-   * Fast full-text & symbol token search
+   * Rebuilds all inverted indexes (symbolIndex, fileNodesIndex, fileEdgesIndex, tokenIndex)
+   * from the current in-memory nodes and edges with enriched tokenization.
    */
-  public search(query: string, limit: number = 20): SearchResult[] {
-    const rawTerms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 0);
-    if (rawTerms.length === 0) return [];
+  public buildInvertedIndex(): void {
+    this.symbolIndex.clear();
+    this.fileNodesIndex.clear();
+    this.fileEdgesIndex.clear();
+    this.tokenIndex.clear();
 
-    const scores = new Map<string, { score: number; matchType: SearchResult['matchType'] }>();
-
-    for (const term of rawTerms) {
-      // 1. Exact & partial symbol matches (High Priority)
-      for (const [sym, nodeIds] of this.symbolIndex.entries()) {
-        if (sym === term) {
-          for (const id of nodeIds) {
-            const current = scores.get(id) || { score: 0, matchType: 'exact_name' };
-            current.score += 50;
-            current.matchType = 'exact_name';
-            scores.set(id, current);
-          }
-        } else if (sym.includes(term)) {
-          for (const id of nodeIds) {
-            const current = scores.get(id) || { score: 0, matchType: 'partial_name' };
-            current.score += 20;
-            scores.set(id, current);
-          }
-        }
+    for (const node of this.nodes.values()) {
+      // Symbol index (lowercase for case-insensitive lookup)
+      const symKey = node.name.toLowerCase();
+      if (!this.symbolIndex.has(symKey)) {
+        this.symbolIndex.set(symKey, new Set());
       }
+      this.symbolIndex.get(symKey)!.add(node.id);
 
-      // 2. Inverted token index (FTS match)
-      for (const [token, nodeIds] of this.tokenIndex.entries()) {
-        if (token.startsWith(term)) {
-          for (const id of nodeIds) {
-            const current = scores.get(id) || { score: 0, matchType: 'fts_content' };
-            current.score += 5;
-            scores.set(id, current);
-          }
+      // File nodes index
+      if (!this.fileNodesIndex.has(node.filePath)) {
+        this.fileNodesIndex.set(node.filePath, new Set());
+      }
+      this.fileNodesIndex.get(node.filePath)!.add(node.id);
+
+      // Token index
+      this.indexNodeTokens(node);
+    }
+
+    for (const edge of this.edges.values()) {
+      if (!this.fileEdgesIndex.has(edge.filePath)) {
+        this.fileEdgesIndex.set(edge.filePath, new Set());
+      }
+      this.fileEdgesIndex.get(edge.filePath)!.add(edge.id);
+    }
+  }
+
+  /**
+   * Enhanced Multi-Factor Composite Relevance Search.
+   * Supports multi-word queries, constituent word tokenization (camelCase, PascalCase, snake_case, kebab-case),
+   * exact/case-insensitive/prefix/substring symbol matching, kind-based boosting, and file path boosting.
+   *
+   * Scoring Engine Rules:
+   * - Exact symbol name match: +100 points
+   * - Case-insensitive exact name match: +60 points
+   * - Symbol name prefix match: +30 points
+   * - Symbol name substring match: +15 points
+   * - Token matching via inverted index: +5 points per matching token weighted by frequency
+   * - Kind/Type boost: class/interface (+15), function/method (+10), route (+12), type (+8)
+   * - File path boost if term matches directory/filename (+10)
+   *
+   * @param query Search string query (multi-word supported)
+   * @param limit Maximum number of results to return (default 10)
+   */
+  public search(query: string, limit: number = 10): SearchResult[] {
+    if (!query || typeof query !== 'string') return [];
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length === 0) return [];
+
+    const effectiveLimit = limit > 0 ? limit : 10;
+    const lowerQuery = trimmedQuery.toLowerCase();
+
+    // Parse multi-word terms and constituent tokens
+    const queryTerms = trimmedQuery.split(/\s+/).filter((t) => t.length > 0);
+    const queryTokens = this.tokenize(trimmedQuery);
+
+    // 1. Gather candidate node IDs from symbolIndex, tokenIndex, and terms
+    const candidateIds = new Set<string>();
+
+    // Exact and partial symbol lookups for full query and terms
+    for (const [symKey, nodeIds] of this.symbolIndex.entries()) {
+      if (symKey === lowerQuery || queryTerms.some((t) => symKey === t.toLowerCase())) {
+        for (const id of nodeIds) candidateIds.add(id);
+      } else if (symKey.includes(lowerQuery) || queryTerms.some((t) => symKey.includes(t.toLowerCase()))) {
+        for (const id of nodeIds) candidateIds.add(id);
+      }
+    }
+
+    // Inverted token lookups
+    for (const qToken of queryTokens) {
+      const lowerQToken = qToken.toLowerCase();
+      // Exact token lookup
+      const directMatches = this.tokenIndex.get(lowerQToken);
+      if (directMatches) {
+        for (const id of directMatches) candidateIds.add(id);
+      }
+      // Prefix matching on tokens
+      for (const [indexedToken, nodeIds] of this.tokenIndex.entries()) {
+        if (indexedToken.startsWith(lowerQToken) || lowerQToken.startsWith(indexedToken)) {
+          for (const id of nodeIds) candidateIds.add(id);
         }
       }
     }
 
-    // Sort by score descending
-    const sorted = Array.from(scores.entries())
-      .sort((a, b) => b[1].score - a[1].score)
-      .slice(0, limit);
+    // 2. Score each candidate node using multi-factor composite relevance engine
+    interface ScoredCandidate {
+      node: CodeNode;
+      score: number;
+      matchType: SearchResult['matchType'];
+    }
 
-    return sorted
-      .map(([nodeId, info]): SearchResult | null => {
-        const node = this.nodes.get(nodeId);
-        if (!node) return null;
-        return {
-          nodes: [node],
-          score: info.score,
-          matchType: info.matchType,
-          highlight: node.signature || node.name,
-        };
-      })
-      .filter((r): r is SearchResult => r !== null);
+    const scored: ScoredCandidate[] = [];
+
+    for (const id of candidateIds) {
+      const node = this.nodes.get(id);
+      if (!node) continue;
+
+      let score = 0;
+      let matchType: SearchResult['matchType'] = 'fts_content';
+      let hasSymbolMatch = false;
+
+      const nodeNameLower = node.name.toLowerCase();
+      const nodeFilePathLower = node.filePath.toLowerCase();
+
+      // Check Exact Symbol Name Match (case-sensitive: +100) vs Case-Insensitive (+60)
+      if (node.name === trimmedQuery || queryTerms.some((t) => node.name === t)) {
+        score += 100;
+        matchType = 'exact_name';
+        hasSymbolMatch = true;
+      } else if (nodeNameLower === lowerQuery || queryTerms.some((t) => nodeNameLower === t.toLowerCase())) {
+        score += 60;
+        matchType = 'exact_name';
+        hasSymbolMatch = true;
+      } else if (
+        nodeNameLower.startsWith(lowerQuery) ||
+        queryTerms.some((t) => t.length >= 2 && nodeNameLower.startsWith(t.toLowerCase()))
+      ) {
+        // Symbol name prefix match: +30 points
+        score += 30;
+        matchType = 'partial_name';
+        hasSymbolMatch = true;
+      } else if (
+        nodeNameLower.includes(lowerQuery) ||
+        queryTerms.some((t) => t.length >= 2 && nodeNameLower.includes(t.toLowerCase()))
+      ) {
+        // Symbol name substring match: +15 points
+        score += 15;
+        matchType = 'partial_name';
+        hasSymbolMatch = true;
+      }
+
+      // Token matching via inverted index: +5 points per matching token weighted by frequency
+      const nodeTokens = this.extractNodeTokens(node);
+      const tokenFreqMap = new Map<string, number>();
+      for (const tok of nodeTokens) {
+        tokenFreqMap.set(tok, (tokenFreqMap.get(tok) || 0) + 1);
+      }
+
+      let tokenMatchPoints = 0;
+      for (const qToken of queryTokens) {
+        const lowerQToken = qToken.toLowerCase();
+        const freq = tokenFreqMap.get(lowerQToken) || 0;
+        if (freq > 0) {
+          // +5 points per matching token weighted by frequency
+          tokenMatchPoints += 5 * Math.min(freq, 10);
+        }
+      }
+      score += tokenMatchPoints;
+
+      // Only apply boosts if there is at least some relevance (symbol match or token match)
+      if (score > 0) {
+        // Kind / Type boost: class/interface (+15), function/method (+10), route (+12), type (+8)
+        switch (node.kind) {
+          case 'class':
+          case 'interface':
+            score += 15;
+            break;
+          case 'route':
+            score += 12;
+            break;
+          case 'function':
+          case 'method':
+            score += 10;
+            break;
+          case 'type':
+            score += 8;
+            break;
+          default:
+            break;
+        }
+
+        // File path boost if term matches directory/filename (+10)
+        const matchesFilePath =
+          nodeFilePathLower.includes(lowerQuery) ||
+          queryTerms.some((t) => t.length >= 2 && nodeFilePathLower.includes(t.toLowerCase()));
+        if (matchesFilePath) {
+          score += 10;
+        }
+
+        // If doc section or document
+        if (node.kind === 'doc_section' || node.kind === 'doc_document') {
+          if (!hasSymbolMatch) matchType = 'doc';
+        }
+
+        scored.push({
+          node,
+          score,
+          matchType,
+        });
+      }
+    }
+
+    // 3. Sort descending by score, tie-break by name
+    scored.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return a.node.name.localeCompare(b.node.name);
+    });
+
+    // 4. Return top results capped at limit
+    return scored.slice(0, effectiveLimit).map((item) => ({
+      nodes: [item.node],
+      score: item.score,
+      matchType: item.matchType,
+      highlight: item.node.signature || item.node.name,
+    }));
   }
 
   /**
@@ -246,6 +405,109 @@ export class KnowledgeStorage {
     return Array.from(nodeIds)
       .map((id) => this.nodes.get(id))
       .filter((n): n is CodeNode => n !== undefined);
+  }
+
+  /**
+   * Deconstructs a symbol name into its constituent word tokens.
+   * Handles camelCase, PascalCase, snake_case, kebab-case, and acronym boundaries.
+   * Example:
+   *   "getUserProfile" -> ["get", "user", "profile", "getuserprofile"]
+   *   "KnowledgeStorage" -> ["knowledge", "storage", "knowledgestorage"]
+   *   "verify_hash_pwd" -> ["verify", "hash", "pwd", "verifyhashpwd"]
+   *   "parseAST" -> ["parse", "ast", "parseast"]
+   */
+  public static tokenizeSymbol(name: string): string[] {
+    if (!name || typeof name !== 'string') return [];
+    const tokens = new Set<string>();
+
+    const clean = name.trim();
+    if (!clean) return [];
+
+    // Split on punctuation/delimiters like '.', '/', '-', '_', ':', ' ', '$', '@', '#'
+    const segments = clean.split(/[^a-zA-Z0-9]+/);
+
+    for (const seg of segments) {
+      if (!seg) continue;
+
+      const lowerSeg = seg.toLowerCase();
+      if (lowerSeg.length >= 2 && lowerSeg.length <= 50) {
+        tokens.add(lowerSeg);
+      }
+
+      // Split camelCase / PascalCase / Acronym boundaries
+      // e.g. "getUserProfile" -> "get User Profile"
+      // e.g. "parseAST" -> "parse AST"
+      // e.g. "ASTParser" -> "AST Parser"
+      const split = seg
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+        .split(/\s+/);
+
+      for (const word of split) {
+        const lowerWord = word.toLowerCase();
+        if (lowerWord.length >= 2 && lowerWord.length <= 50) {
+          tokens.add(lowerWord);
+        }
+      }
+    }
+
+    // Also add full stripped alphanumeric string if multi-segment
+    const fullNormalized = clean.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (fullNormalized.length >= 2 && fullNormalized.length <= 50) {
+      tokens.add(fullNormalized);
+    }
+
+    return Array.from(tokens);
+  }
+
+  /**
+   * Tokenizes arbitrary text or code snippets into semantic constituent tokens.
+   */
+  public tokenize(text: string): string[] {
+    if (!text || typeof text !== 'string') return [];
+    const tokens = new Set<string>();
+
+    const rawSegments = text.split(/[\s,.;:()\[\]{}<>"'`\\/|!?*+=~^%#@&$-]+/);
+    for (const seg of rawSegments) {
+      if (!seg || seg.length < 2) continue;
+      const subTokens = KnowledgeStorage.tokenizeSymbol(seg);
+      for (const t of subTokens) {
+        tokens.add(t);
+      }
+    }
+
+    return Array.from(tokens);
+  }
+
+  /**
+   * Extracts all constituent tokens for a CodeNode from its name, signature,
+   * content snippet, docstring, and file path.
+   */
+  public extractNodeTokens(node: CodeNode): string[] {
+    const tokens: string[] = [];
+
+    // Symbol name tokens (high relevance)
+    tokens.push(...KnowledgeStorage.tokenizeSymbol(node.name));
+
+    // File path tokens
+    tokens.push(...KnowledgeStorage.tokenizeSymbol(node.filePath));
+
+    // Signature tokens
+    if (node.signature) {
+      tokens.push(...this.tokenize(node.signature));
+    }
+
+    // Docstring tokens
+    if (node.docstring) {
+      tokens.push(...this.tokenize(node.docstring));
+    }
+
+    // Content snippet tokens
+    if (node.contentSnippet) {
+      tokens.push(...this.tokenize(node.contentSnippet));
+    }
+
+    return tokens;
   }
 
   private insertNodeInMemory(node: CodeNode): void {
@@ -278,10 +540,10 @@ export class KnowledgeStorage {
   }
 
   private indexNodeTokens(node: CodeNode): void {
-    const textToTokenize = `${node.name} ${node.signature || ''} ${node.contentSnippet || ''} ${node.docstring || ''}`;
-    const tokens = this.tokenize(textToTokenize);
+    const tokens = this.extractNodeTokens(node);
+    const uniqueTokens = new Set(tokens);
 
-    for (const token of tokens) {
+    for (const token of uniqueTokens) {
       if (!this.tokenIndex.has(token)) {
         this.tokenIndex.set(token, new Set());
       }
@@ -290,23 +552,16 @@ export class KnowledgeStorage {
   }
 
   private removeNodeTokens(node: CodeNode): void {
-    const textToTokenize = `${node.name} ${node.signature || ''} ${node.contentSnippet || ''} ${node.docstring || ''}`;
-    const tokens = this.tokenize(textToTokenize);
+    const tokens = this.extractNodeTokens(node);
+    const uniqueTokens = new Set(tokens);
 
-    for (const token of tokens) {
+    for (const token of uniqueTokens) {
       const set = this.tokenIndex.get(token);
       if (set) {
         set.delete(node.id);
         if (set.size === 0) this.tokenIndex.delete(token);
       }
     }
-  }
-
-  private tokenize(text: string): string[] {
-    return text
-      .toLowerCase()
-      .split(/[^a-z0-9_]+/i)
-      .filter((t) => t.length >= 2 && t.length <= 40);
   }
 
   private clearInMemory(): void {

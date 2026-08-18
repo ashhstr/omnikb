@@ -6,6 +6,7 @@ import { KnowledgeStorage } from '../core/storage';
 import { WorkspaceWatcher } from '../core/watcher';
 import { WorkspaceManager } from '../core/workspace-manager';
 import { WorkspaceRegistry } from '../core/workspace-registry';
+import { KnowledgeReporter } from '../core/reporter';
 
 export class LocalHttpServer {
   private port: number;
@@ -81,7 +82,7 @@ export class LocalHttpServer {
 
         try {
           // 1. Health check
-          if (pathname === '/v1/health' || pathname === '/') {
+          if (pathname === '/v1/health') {
             const inst = await this.resolveInstance(query.workspace);
             this.sendJson(res, 200, {
               status: 'healthy',
@@ -93,7 +94,32 @@ export class LocalHttpServer {
             return;
           }
 
-          // 2. Workspace Management Endpoints
+          // 2. Visualizer UI (Served on / and /visual)
+          if ((pathname === '/' || pathname === '/visual') && req.method === 'GET') {
+            if (
+              pathname === '/' &&
+              req.headers.accept &&
+              req.headers.accept.includes('application/json') &&
+              !req.headers.accept.includes('text/html')
+            ) {
+              const inst = await this.resolveInstance(query.workspace);
+              this.sendJson(res, 200, {
+                status: 'healthy',
+                version: '1.4.0',
+                engine: 'OmniKB Real-Time Multi-Workspace Engine',
+                activeWorkspace: this.manager.getRegistry().getActive(),
+                stats: inst.graph.getStats(),
+              });
+              return;
+            }
+
+            const html = KnowledgeReporter.renderVisualizerHtml();
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(html);
+            return;
+          }
+
+          // 3. Workspace Management Endpoints
           if (pathname === '/v1/workspaces' && req.method === 'GET') {
             const list = this.manager.getRegistry().list();
             const active = this.manager.getRegistry().getActive();
@@ -150,14 +176,46 @@ export class LocalHttpServer {
             return;
           }
 
-          // 3. Stats
+          // 4. Graph Data Endpoint (Dynamic Visualizer Feed)
+          if (pathname === '/v1/graph/data' && (req.method === 'GET' || req.method === 'POST')) {
+            const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+            const wsParam = body.workspace || query.workspace;
+            const inst = await this.resolveInstance(wsParam);
+            const stats = inst.graph.getStats();
+            const nodes = Array.from(inst.storage.nodes.values());
+            const edges = Array.from(inst.storage.edges.values());
+            const activeWorkspace = this.manager.getRegistry().getActive() || {
+              id: 'default',
+              name: inst.name || path.basename(inst.workspaceRoot),
+              rootPath: inst.workspaceRoot,
+            };
+
+            this.sendJson(res, 200, {
+              nodes,
+              edges,
+              godNodes: stats.godNodes,
+              stats: {
+                totalNodes: stats.totalNodes,
+                totalEdges: stats.totalEdges,
+                totalFiles: stats.totalFiles,
+                nodesByKind: stats.nodesByKind,
+                edgesByKind: stats.edgesByKind,
+                languages: stats.languages,
+                lastSyncTime: stats.lastSyncTime,
+              },
+              activeWorkspace,
+            });
+            return;
+          }
+
+          // 5. Stats
           if (pathname === '/v1/stats' && req.method === 'GET') {
             const inst = await this.resolveInstance(query.workspace);
             this.sendJson(res, 200, { workspace: inst.workspaceRoot, ...inst.graph.getStats() });
             return;
           }
 
-          // 4. Full Graph Export (JSON)
+          // 6. Full Graph Export (JSON)
           if (pathname === '/v1/graph' && req.method === 'GET') {
             const inst = await this.resolveInstance(query.workspace);
             const nodes = Array.from(inst.storage.nodes.values());
@@ -166,7 +224,7 @@ export class LocalHttpServer {
             return;
           }
 
-          // 5. LLM Prompt Context (Formatted Markdown)
+          // 7. LLM Prompt Context (Formatted Markdown)
           if (pathname === '/v1/context' && req.method === 'GET') {
             const inst = await this.resolveInstance(query.workspace);
             const kbPath = path.join(inst.workspaceRoot, 'KNOWLEDGE_BASE.md');
@@ -180,21 +238,7 @@ export class LocalHttpServer {
             return;
           }
 
-          // 6. Visualizer UI
-          if (pathname === '/visual' && req.method === 'GET') {
-            const inst = await this.resolveInstance(query.workspace);
-            const visualPath = path.join(inst.workspaceRoot, '.omnikb', 'graph.html');
-            if (fs.existsSync(visualPath)) {
-              const content = fs.readFileSync(visualPath, 'utf8');
-              res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-              res.end(content);
-            } else {
-              this.sendJson(res, 404, { error: `Visualizer graph.html not generated yet for workspace: ${inst.workspaceRoot}` });
-            }
-            return;
-          }
-
-          // 7. Action Endpoints (Explore, Impact, Search, God Nodes, Sync)
+          // 8. Action Endpoints (Explore, Impact, Search, God Nodes, Sync)
           if (pathname === '/v1/explore' && (req.method === 'GET' || req.method === 'POST')) {
             const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
             const q = body.query || query.query || '';
@@ -206,13 +250,20 @@ export class LocalHttpServer {
             return;
           }
 
-          if (pathname === '/v1/impact' && (req.method === 'GET' || req.method === 'POST')) {
+          if (
+            (pathname === '/v1/graph/impact' || pathname === '/v1/impact') &&
+            (req.method === 'GET' || req.method === 'POST')
+          ) {
             const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
             const target = body.target || query.target || '';
-            const maxDepth = parseInt(body.maxDepth || query.maxDepth || '5', 10);
+            const depth = parseInt(body.depth || body.maxDepth || query.depth || query.maxDepth || '5', 10);
             const wsParam = body.workspace || query.workspace;
             const inst = await this.resolveInstance(wsParam);
-            const result = inst.graph.calculateImpact(target, maxDepth);
+            if (!target) {
+              this.sendJson(res, 400, { error: 'Missing required query/body parameter: target' });
+              return;
+            }
+            const result = inst.graph.calculateImpact(target, depth);
             this.sendJson(res, 200, result);
             return;
           }
