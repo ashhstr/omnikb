@@ -1,6 +1,6 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-18T14:50:10.350Z | **Indexed Files**: 116 | **Total Symbols**: 575 | **Call & Dependency Edges**: 3174
+> **Auto-Updated**: 2026-08-18T14:51:42.165Z | **Indexed Files**: 116 | **Total Symbols**: 575 | **Call & Dependency Edges**: 3174
 
 ## 1. Executive Architecture Overview
 
@@ -37,7 +37,6 @@ The most referenced and interconnected symbols in this repository:
 
 ### `/root` (12 files)
 - **`AGENTS.md`**: `1 symbols`
-- **`CONTRIBUTING.md`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
 - **`SECURITY.md`**: `1 symbols`
 - **`tsconfig.json`**: `1 symbols`
@@ -46,6 +45,7 @@ The most referenced and interconnected symbols in this repository:
 - **`.npmignore`**: `1 symbols`
 - **`LICENSE`**: `1 symbols`
 - **`package.json`**: `1 symbols`
+- **`.gitignore`**: `1 symbols`
 - *(and 2 more files)*
 
 ### `/docs` (6 files)
