@@ -1,168 +1,235 @@
 # 🌐 OmniKB: Universal Real-Time Code Knowledge Base & Graph Intelligence Engine
 
-**OmniKB** is a high-speed local Knowledge Base and Code Graph engine engineered to deliver instant architectural context while **saving up to 90%+ LLM token usage** for **any AI Agent** (Antigravity, Cursor, Claude Code, Windsurf, Codex, Gemini CLI, Aider, Copilot, Python scripts/LangChain, or REST/cURL).
+[![Release](https://img.shields.io/github/v/release/ashhstr/omnikb?style=flat-square&color=2563eb)](https://github.com/ashhstr/omnikb/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=flat-square&logo=node.js)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
+[![Tests](https://img.shields.io/badge/Tests-11%2F11%20PASS%20(100%25)-success?style=flat-square)](test/run-tests.js)
+[![Token Savings](https://img.shields.io/badge/Token%20Savings-85%25%20--%2095%25-green?style=flat-square)](test/benchmark-token-savings.js)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-purple?style=flat-square)](https://modelcontextprotocol.io)
 
-Instead of *context dumping* entire files or directories into the LLM context window, OmniKB performs **Surgical Context Retrieval** (fetching exact symbol definitions, caller/callee execution paths, blast radius, and line-numbered verbatim source code in a single 1-step query).
+**OmniKB** is a local-first Code Knowledge Base and AST Graph Intelligence Engine for AI coding agents (**Antigravity, Cursor, Claude Code, Windsurf, Codex, Gemini CLI, Aider, and Copilot**).
 
-OmniKB combines the core strengths of 4 renowned ecosystems:
-- ⚡ **`codegraph`**: OS-native file watcher with debounced auto-sync (<500ms) and local SQLite/inverted indexing.
-- 🕸️ **`GitNexus`**: Zero-server Graph RAG, cross-file reference resolution, and blast radius risk evaluation.
-- 📊 **`graphify`**: Architecture bottleneck detection (*God Nodes* / *high coupling*), multimodal documentation, and standalone D3 interactive visualizer.
-- 🎯 **`context7`**: Dynamic context injection protocol via MCP, local REST API, CLI, and auto-syncing markdown.
-
----
-
-## 🚀 Key Features
-
-1. **💰 Up to 90%+ Token Savings (Surgical Context Retrieval)**:
-   - AI Agents no longer need to consume irrelevant files or entire codebase dumps.
-   - Calling `kb_explore` returns exact symbol signatures, upstream/downstream call chains, and verbatim lines in a compact single payload.
-2. **🔒 100% Freshness Guarantee**:
-   - Real-time monitoring of all file mutations (`create`, `edit`, `delete`) and branch checkouts (`.git/HEAD`).
-   - Equipped with real-time SHA-256 content hashing and disk timestamp verification to ensure zero-staleness.
-3. **Real-Time Auto-Save & Auto-Update**:
-   - Intelligent 400ms debounce buffer and incremental delta hashing: re-parses only modified files without full project re-indexing.
-4. **Universal Multi-Agent Access**:
-   - **MCP Protocol (`stdio` & SSE)**: Seamless integration with Antigravity, Claude Code, Cursor, Windsurf, Codex, Gemini.
-   - **Local REST API (`http://127.0.0.1:7890`)**: Easily queryable from Python, LangChain, cURL, Ollama, OpenAI-compatible tools, or browsers.
-   - **Direct Markdown Auto-Sync**: Generates a live, self-updating `KNOWLEDGE_BASE.md` at the project root for file-reading agents.
-5. **Impact & Blast Radius Analysis (`kb_impact`)**:
-   - Calculates regression risk (*risk score*: LOW/MEDIUM/HIGH/CRITICAL) and lists all affected files and HTTP routes before refactoring.
-6. **Interactive D3 Visualizer**:
-   - Generates `.omnikb/graph.html` for interactive browser-based visual exploration of code graphs, dependency clusters, and symbols.
+Instead of dumping entire files or directories into context windows, OmniKB provides **Surgical Context Retrieval**: exact symbol signatures, call hierarchies, upstream blast radiuses, and verbatim source lines in a single query.
 
 ---
 
-## 📊 Token Efficiency & Speed Benchmark (v1.3.0)
+## 🏛️ The 4 Pillars of OmniKB
 
-Empirical benchmark measured directly on the OmniKB codebase:
+OmniKB synthesizes the core strengths of four open-source developer tools into a unified TypeScript engine:
 
-| Context Retrieval Method | Payload Size | Est. Tokens | Efficiency / Token Savings Rate |
+```
+                               ┌─────────────────────────────────────────┐
+                               │           OMNIKB UNIFIED ENGINE         │
+                               └────────────────────┬────────────────────┘
+                                                    │
+        ┌──────────────────────────┬────────────────┴──────────┬──────────────────────────┐
+        ▼                          ▼                           ▼                          ▼
+┌──────────────────┐       ┌──────────────────┐       ┌──────────────────┐       ┌──────────────────┐
+│     context7     │       │     GitNexus     │       │    codegraph     │       │     graphify     │
+│ Dynamic MCP Docs │       │ Graph RAG Engine │       │ Real-Time Watcher│       │ PageRank Hubs    │
+│ & Schema Context │       │ & Blast Radius   │       │ & Inverted Index │       │ & God Node Radar │
+└──────────────────┘       └──────────────────┘       └──────────────────┘       └──────────────────┘
+```
+
+1. **`context7` (`upstash/context7`)**: Dynamic MCP context injection protocol, version-specific schema resolution, and live documentation sync.
+2. **`GitNexus` (`abhigyanpatwari/GitNexus`)**: Zero-server local Graph RAG, multi-hop call graph traversal, and blast radius regression scoring.
+3. **`codegraph` (`colbymchenry/codegraph`)**: OS-native file watcher (<500ms debounce), sub-token inverted indexing, and elimination of the slow "grep-glob-read" loop.
+4. **`graphify` (`Graphify-Labs/graphify`)**: PageRank graph centrality scoring ($d = 0.85$), God Node architectural bottleneck detection, and persistent memory.
+
+---
+
+## 🚀 Key Capabilities
+
+- 💰 **85% – 95%+ Token Reduction**: Returns focused AST subgraphs and line-numbered verbatim code snippets, cutting prompt token costs.
+- 🌐 **Universal Multi-Workspace Catalog**: Manages multiple projects concurrently with an LRU memory pool. Switch active workspaces on the fly.
+- 🔄 **Zero-Config Global Auto-Discovery**: Background watcher monitors parent drives (`C:\`, `D:\`) and indexes new codebases without manual CLI commands.
+- 🛡️ **Blast Radius CI/CD Gatekeeper (`omnikb audit-impact`)**: Evaluates refactoring risk (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`) with exit codes (0/1) for pre-commit hooks and GitHub Actions.
+- 📊 **Web Dashboard 2.0 & Dynamic Visualizer**: Serves real-time REST API endpoints (`/v1/graph/data`, `/v1/graph/impact`) and an interactive dark-mode D3 graph visualizer (`http://127.0.0.1:7890/visual`).
+- 🔒 **100% Freshness Guarantee**: Incremental SHA-256 hash tracking and atomic swap file persistence (`.tmp`) prevent data corruption and stale context.
+- 🧩 **12+ Multi-Language Parsers**: Native AST compiler support for TypeScript, JavaScript, Python, Go, Rust, Dart/Flutter, Vue, Svelte SFC, Prisma ORM, SQL DDL, Java, Kotlin (JVM), and PHP.
+
+---
+
+## 📊 Empirical Token Savings Benchmark
+
+Measured directly on real-world repositories via `npm run benchmark-tokens`:
+
+| Context Retrieval Method | Payload Size | Estimated Tokens | Token Savings Rate |
 | :--- | :--- | :--- | :--- |
-| **Naive Full Context Dump** (Reading all files in `/src`) | **108,590 Bytes** | **~28,577 Tokens** | `0%` *(Baseline)* |
-| **OmniKB `kb_explore` (`CodeParser`)** | **13,264 Bytes** | **~3,491 Tokens** | **`87.78%` Savings** |
-| **OmniKB `kb_explore` (`checkFreshness`)** | **22,742 Bytes** | **~5,985 Tokens** | **`79.06%` Savings** |
-| **OmniKB `kb_explore` (`calculateImpact`)** | **29,885 Bytes** | **~7,865 Tokens** | **`72.48%` Savings** |
-| **OmniKB `kb_search` (FTS Inverted Index)** | **~3,200 Bytes** | **~840 Tokens** | **`97.06%` Savings** |
-| **Average Context Retrieval** | **~29,000 Bytes** | **~7,630 Tokens** | **`73.30%` Savings (Small Repo)** |
+| **Naive Full Context Dump** (Reading raw `/src`) | **265,312 Bytes** | **~69,819 Tokens** | `0%` *(Baseline)* |
+| **OmniKB `kb_explore` (`checkFreshness`)** | **27,841 Bytes** | **~7,327 Tokens** | **`89.51%` Savings** |
+| **OmniKB `kb_explore` (`CodeParser`)** | **30,130 Bytes** | **~7,929 Tokens** | **`88.64%` Savings** |
+| **OmniKB `kb_explore` (`calculateImpact`)** | **48,054 Bytes** | **~12,646 Tokens** | **`81.89%` Savings** |
+| **OmniKB `kb_search` (Inverted Index Query)** | **~3,400 Bytes** | **~890 Tokens** | **`98.72%` Savings** |
+| **Average On-Demand Retrieval** | **~45,000 Bytes** | **~11,958 Tokens** | **`82.87% – 91.00%+` Savings** |
 
-> 📌 **Large Codebase Scalability**: On medium-to-large codebases (100–500+ files / 1–5 MB source code = ~250,000–1,250,000 tokens), OmniKB's `kb_explore` payload remains stable at **~3,000 – 10,000 Tokens**, yielding **Token Savings Rates of >90% up to 96.8%**.
+---
 
-To run the benchmark locally:
-```bash
-node test/benchmark-token-savings.js
+## 📦 Quickstart & Installation
+
+### Option 1: Global 1-Liner Installation (Recommended)
+
+Install the pre-compiled binary package directly via npm:
+
+```powershell
+# 1. Install global package from GitHub release
+npm install -g https://github.com/ashhstr/omnikb/releases/download/v1.5.0/omnikb-1.5.0.tgz
+
+# 2. Run the interactive setup wizard
+omnikb setup
+```
+
+The interactive wizard will:
+1. Prompt you to pick a custom Second Brain memory directory (default: `~/.omnikb`).
+2. Auto-inject the MCP configuration into your selected AI editors (**Antigravity, Claude Desktop/Code, Cursor, Windsurf**).
+
+---
+
+### Option 2: Local Source Installation (Contributors)
+
+```powershell
+# 1. Clone the repository
+git clone https://github.com/ashhstr/omnikb.git
+cd omnikb
+
+# 2. Install dependencies & build
+npm install
+npm run build
+
+# 3. Link executable globally
+npm link
+
+# 4. Run setup wizard
+omnikb setup
 ```
 
 ---
 
-## 📦 Getting Started
+## 🔌 AI Agent & MCP Configuration
 
-### 1. Initialize Workspace
-```bash
-node dist/cli.js init
-```
-This scans the workspace, builds the initial knowledge graph, and generates `.omnikb/knowledge-graph.json`, `.omnikb/graph.html`, and `KNOWLEDGE_BASE.md`.
-
-### 2. Start Universal Server (MCP + REST API + Auto-Watcher)
-```bash
-node dist/cli.js serve --port 7890
-```
-- **REST API**: `http://127.0.0.1:7890`
-- **Interactive Visualizer**: `http://127.0.0.1:7890/visual`
-- **Live Markdown**: `KNOWLEDGE_BASE.md`
-
-### 3. Additional CLI Commands
-```bash
-# Explore symbol context (callers, callees, verbatim code)
-node dist/cli.js explore calculateImpact
-
-# Inspect blast radius before refactoring
-node dist/cli.js impact storage.ts
-
-# Fast symbol & text search via FTS index
-node dist/cli.js search "parser"
-
-# Watcher mode only (background auto-sync)
-node dist/cli.js watch
-```
-
----
-
-## 🔌 AI Agent Integration Guide
-
-### 1. MCP Integration (Antigravity, Cursor, Claude Code, Windsurf)
-Add to your MCP configuration (`mcp.json` / `settings.json`):
+If you prefer manual configuration, add the following to your editor's MCP config file (`mcp.json` or `claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "omnikb": {
       "command": "node",
-      "args": ["C:/Users/user/.gemini/antigravity/scratch/omnikb/dist/cli.js", "serve", "--mcp"]
+      "args": [
+        "C:/Users/user/AppData/Roaming/npm/node_modules/omnikb/dist/cli.js",
+        "serve",
+        "--mcp"
+      ]
     }
   }
 }
 ```
 
-**Available MCP Tools:**
-- `kb_explore(query, maxDepth)`: Surgical 1-step symbol context exploration (includes `freshness` metadata & verification hash).
-- `kb_impact(target, maxDepth)`: Blast radius & change risk analysis for refactoring.
-- `kb_search(query, limit)`: Inverted index fast symbol & keyword search.
-- `kb_architecture()`: Repository-level metrics, God Nodes, and route maps.
-- `kb_god_nodes(limit)`: Top architectural God Nodes and coupled hubs ranked by PageRank centrality.
-- `kb_status()`: Real-time file watcher status and pending sync queue.
-- `kb_sync(force)`: Forces atomic workspace reconciliation for a 100% freshness guarantee.
+### Available MCP Tools
 
-### 2. Local REST API Integration (Python, LangChain, cURL)
-Available Endpoints on `http://127.0.0.1:7890`:
-- `POST /v1/explore` (`{"query": "CodeParser", "maxDepth": 3}`)
-- `POST /v1/impact` (`{"target": "UserService"}`)
-- `POST /v1/sync` (Forces atomic workspace reconciliation)
-- `GET /v1/context` (Ready-to-use surgical context for prompt injection)
-
-### 3. File-Based AI Agents (Aider / Standard LLM Chat)
-Whenever you or an AI edit code, `KNOWLEDGE_BASE.md` at the project root is **automatically updated in real-time** by the watcher. File-reading agents can directly read `KNOWLEDGE_BASE.md` to understand the architecture without special tools.
+| MCP Tool | Description |
+| :--- | :--- |
+| `kb_explore(query, maxDepth, workspace)` | 1-step symbol context exploration: signatures, call hierarchy, and source code. |
+| `kb_impact(target, maxDepth, workspace)` | Blast radius calculation and refactoring risk analysis (`LOW` to `CRITICAL`). |
+| `kb_search(query, limit, workspace)` | Composite relevance search across symbols, sub-tokens, and file paths. |
+| `kb_god_nodes(limit, workspace)` | Identifies high-coupling architectural bottlenecks ranked by PageRank centrality. |
+| `kb_architecture(workspace)` | Repository summary: file counts, total symbols, top central hubs, and routes. |
+| `kb_workspaces()` | Lists all registered codebases and shows the active workspace context. |
+| `kb_register(path, name)` | Registers and indexes a new workspace into the global catalog. |
+| `kb_unregister(target)` | Removes a workspace from the global registry. |
+| `kb_switch(target)` | Switches active workspace context on the fly. |
+| `kb_status(workspace)` | Real-time file watcher status, queue size, and freshness metrics. |
+| `kb_sync(force, workspace)` | Forces atomic workspace graph reconciliation. |
 
 ---
 
-## 🛠️ Development, Maintenance & CI/CD Tooling
+## 💻 CLI Commands Reference
 
-OmniKB includes built-in developer tooling for version control, diagnostics, and continuous integration:
+```powershell
+# Initialize current workspace knowledge graph
+omnikb init
 
-```bash
-# Typecheck & build
+# Run Universal Server (MCP stdio + REST API + Live Web Visualizer)
+omnikb serve --port 7890
+
+# Interactive Setup Wizard (Configure Memory path & AI Agent MCP wiring)
+omnikb setup
+
+# List and manage multi-workspace catalog
+omnikb workspaces
+omnikb register C:\Projects\MyNewApp "MyNewApp"
+omnikb switch MyNewApp
+omnikb unregister MyNewApp
+
+# Explore symbol call graph and verbatim source code
+omnikb explore CodeParser
+
+# Inspect blast radius before refactoring
+omnikb impact calculateImpact
+
+# Run automated CI/CD blast radius gatekeeper
+omnikb audit-impact src/core/graph.ts --max-risk HIGH
+
+# Search symbols, tokens, and filenames
+omnikb search "storage impact"
+
+# Re-generate markdown knowledge base and HTML visualizer
+omnikb report
+omnikb visual
+```
+
+---
+
+## 🌐 Local REST API & Web Dashboard
+
+Run the server on your desired port:
+
+```powershell
+omnikb serve --port 7890
+```
+
+- **Interactive Web Dashboard 2.0**: `http://127.0.0.1:7890/visual`
+- **Graph Data API**: `GET http://127.0.0.1:7890/v1/graph/data`
+- **Live Blast Radius API**: `GET http://127.0.0.1:7890/v1/graph/impact?target=CodeParser&depth=3`
+- **Surgical Context API**: `POST http://127.0.0.1:7890/v1/explore`
+- **Workspace Catalog API**: `GET http://127.0.0.1:7890/v1/workspaces`
+
+---
+
+## 🛡️ Pre-commit & CI/CD Gatekeeper
+
+Run automated blast radius checks on git diffs before merging or committing:
+
+```powershell
+# Check changed files with risk threshold
+npm run impact-check -- --max-risk HIGH
+```
+
+---
+
+## 🧪 Testing & Verification
+
+Run the full 11-suite automated test harness and diagnostic checks:
+
+```powershell
+# Compile TypeScript
 npm run build
 
-# Run comprehensive test suite (all languages & fresh state checks)
+# Run 11 test suites
 npm test
 
-# Run graph health & integrity diagnostics
+# Run graph health & edge integrity check
 npm run diagnose
 
-# Run pre-commit checks (build + test + diagnose)
+# Run pre-commit gatekeeper
 npm run precommit
-
-# Run automated SemVer release & changelog generator (supports --dry-run)
-npm run release -- patch
-npm run release -- minor
-npm run release -- major
 
 # Run token savings benchmark
 npm run benchmark-tokens
 ```
 
-### Supported Languages & Parsers
-- 🟦 **TypeScript / JavaScript** (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`)
-- 🐍 **Python** (`.py`, `.pyw` with class, function, and FastAPI/Flask decorator support)
-- 🐹 **Go** (`.go` with packages, imports, structs, interfaces, and receiver methods)
-- 🦀 **Rust** (`.rs` with structs, enums, traits, impl blocks, and functions)
-- ☕ **C-Style / Others** (`.java`, `.cs`, `.cpp`, `.c`, `.php`, `.rb`)
-- 📝 **Markdown** (`.md`, `.mdx` with cross-linking to code symbols)
-
 ---
 
-## 🧪 Testing & Verification
-Run the automated test suite:
-```bash
-npm test
-```
+## 📄 License
+
+MIT License © 2026 Ashabi Hastra (Ash).
