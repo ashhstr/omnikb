@@ -201,36 +201,13 @@ omnikb serve --port 7890
 
 ---
 
-## 🛡️ Pre-commit & CI/CD Gatekeeper
+## 🤝 Contributing
 
-Run automated blast radius checks on git diffs before merging or committing:
+Contributions, issues, and feature requests are welcome!
 
-```powershell
-# Check changed files with risk threshold
-npm run impact-check -- --max-risk HIGH
-```
-
----
-
-## 🧪 Testing & Verification
-
-Run the full 11-suite automated test harness and diagnostic checks:
-
-```powershell
-# Compile TypeScript
-npm run build
-
-# Run 11 test suites
+```bash
+# Run test suite
 npm test
-
-# Run graph health & edge integrity check
-npm run diagnose
-
-# Run pre-commit gatekeeper
-npm run precommit
-
-# Run token savings benchmark
-npm run benchmark-tokens
 ```
 
 ---
