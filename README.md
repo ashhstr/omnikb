@@ -66,29 +66,53 @@ Measured directly on real-world repositories via `npm run benchmark-tokens`:
 
 ---
 
-## 📦 Quickstart & Installation
+## ⚡ Quickstart & Installation
 
-### Option 1: Global 1-Liner Installation (Recommended)
+### 1. Interactive Setup Wizard (Recommended)
 
-Install the pre-compiled binary package directly via npm:
+Run OmniKB instantly via `npx` or install globally with npm:
 
-```powershell
-# 1. Install global package from GitHub release
-npm install -g https://github.com/ashhstr/omnikb/releases/download/v1.5.0/omnikb-1.5.0.tgz
+```bash
+# Run interactive setup wizard (auto-configures Second Brain & AI Editors)
+npx omnikb setup
 
-# 2. Run the interactive setup wizard
-omnikb setup
+# Or install globally
+npm install -g omnikb
 ```
 
 The interactive wizard will:
-1. Prompt you to pick a custom Second Brain memory directory (default: `~/.omnikb`).
-2. Auto-inject the MCP configuration into your selected AI editors (**Antigravity, Claude Desktop/Code, Cursor, Windsurf**).
+1. Prompt you to pick a custom **Second Brain** memory directory (default: `~/.omnikb`).
+2. Auto-detect and wire the MCP configuration into your selected AI editors (**Antigravity, Cursor, Claude Code / Desktop, Windsurf**).
 
 ---
 
-### Option 2: Local Source Installation (Contributors)
+### 2. Manual MCP Integration (Editor Config)
 
-```powershell
+If you prefer adding OmniKB manually to your editor's configuration (`mcp.json`, `.gemini/config/mcp.json`, or `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "omnikb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "omnikb",
+        "serve",
+        "--mcp"
+      ]
+    }
+  }
+}
+```
+
+---
+
+### 3. Local Development & Contributors
+
+To develop or contribute to the OmniKB engine locally from source:
+
+```bash
 # 1. Clone the repository
 git clone https://github.com/ashhstr/omnikb.git
 cd omnikb
@@ -100,30 +124,11 @@ npm run build
 # 3. Link executable globally
 npm link
 
-# 4. Run setup wizard
+# 4. Launch setup wizard
 omnikb setup
 ```
 
 ---
-
-## 🔌 AI Agent & MCP Configuration
-
-If you prefer manual configuration, add the following to your editor's MCP config file (`mcp.json` or `claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "omnikb": {
-      "command": "node",
-      "args": [
-        "C:/Users/user/AppData/Roaming/npm/node_modules/omnikb/dist/cli.js",
-        "serve",
-        "--mcp"
-      ]
-    }
-  }
-}
-```
 
 ### Available MCP Tools
 
