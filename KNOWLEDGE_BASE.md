@@ -1,6 +1,6 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-18T14:14:15.357Z | **Indexed Files**: 115 | **Total Symbols**: 574 | **Call & Dependency Edges**: 3174
+> **Auto-Updated**: 2026-08-18T14:23:58.240Z | **Indexed Files**: 115 | **Total Symbols**: 609 | **Call & Dependency Edges**: 3250
 
 ## 1. Executive Architecture Overview
 
@@ -18,14 +18,14 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls | PageRank |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.0254` |
-| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0215` |
-| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0166` |
-| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0164` |
-| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0136` |
-| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0131` |
-| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0129` |
-| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0103` |
+| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.0244` |
+| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0206` |
+| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0159` |
+| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0157` |
+| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0131` |
+| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0126` |
+| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0123` |
+| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0098` |
 
 ## 3. Web & API Route Registry
 
@@ -39,13 +39,13 @@ The most referenced and interconnected symbols in this repository:
 - **`AGENTS.md`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
-- **`README.md`**: `1 symbols`
 - **`SECURITY.md`**: `1 symbols`
 - **`tsconfig.json`**: `1 symbols`
 - **`CHANGELOG.md`**: `1 symbols`
 - **`ORIGINAL_REQUEST.md`**: `9 symbols`
 - **`.npmignore`**: `1 symbols`
 - **`LICENSE`**: `1 symbols`
+- **`package.json`**: `1 symbols`
 - *(and 1 more files)*
 
 ### `/docs` (6 files)
