@@ -1,6 +1,6 @@
 {
   "name": "omnikb",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Universal Real-Time Code Knowledge Base & Graph Intelligence Engine with Auto-Sync and Multi-Agent Interfaces",
   "main": "dist/cli.js",
   "bin": {

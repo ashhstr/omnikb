@@ -1,5 +1,15 @@
 # OmniKB Changelog
 
+## [v1.5.0] - 2026-08-18
+
+### Features & Architectural Highlights
+- **Interactive Setup Wizard (`omnikb setup`)**: Zero-config onboarding CLI wizard for custom Second Brain memory path selection and automatic MCP injection into AI Agents (Antigravity, Claude Code/Desktop, Cursor, Windsurf).
+- **Universal Multi-Workspace Engine**: Seamless multi-project cataloging with LRU eviction cache, active workspace switching, and dynamic resolution across MCP tools (`kb_workspaces`, `kb_register`, `kb_unregister`, `kb_switch`).
+- **Global Auto-Discovery Daemon**: Background watcher that automatically monitors parent directories (including root drives `C:\`, `D:\`) and transparently indexes new projects upon creation without manual commands.
+- **Zero-Data-Loss Hardening**: Multi-process live registry re-syncing, recursive subdirectory scanning, and atomic `.tmp` swap file persistence.
+- **Dedicated Multi-Language Parsers**: Added deep AST support for Dart/Flutter, Vue/Svelte SFC, Prisma ORM, SQL DDL, JVM (Java/Kotlin), and PHP.
+- **Seamless NPM Git Distribution**: Pre-compiled `dist/` distribution artifacts and zero-dependency global installation via `npm install -g github:ashhstr/omnikb`.
+
 ## [v1.4.0] - 2026-08-16
 
 ### Changes
