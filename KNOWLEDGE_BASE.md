@@ -1,6 +1,6 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-18T14:23:58.240Z | **Indexed Files**: 115 | **Total Symbols**: 609 | **Call & Dependency Edges**: 3250
+> **Auto-Updated**: 2026-08-18T14:39:06.340Z | **Indexed Files**: 115 | **Total Symbols**: 609 | **Call & Dependency Edges**: 3250
 
 ## 1. Executive Architecture Overview
 

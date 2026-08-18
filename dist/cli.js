@@ -351,6 +351,7 @@ async function main() {
             manager.dispose();
             break;
         }
+        case 'install':
         case 'setup': {
             const { runSetupWizard } = require('./setup-wizard');
             await runSetupWizard();
