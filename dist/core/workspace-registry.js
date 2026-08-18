@@ -191,7 +191,10 @@ class WorkspaceRegistry {
         if (byName)
             return byName;
         // 4. Match closest ancestor workspace path
-        return this.findByPath(trimmed);
+        if (trimmed.includes('/') || trimmed.includes('\\') || path.isAbsolute(trimmed) || fs.existsSync(path.resolve(trimmed))) {
+            return this.findByPath(trimmed);
+        }
+        return null;
     }
     findByPath(targetPath) {
         if (!targetPath)
@@ -233,16 +236,21 @@ class WorkspaceRegistry {
      * Discovers the project root directory from any file path by looking for project root markers
      */
     static detectProjectRoot(startPath) {
-        let current = path.resolve(startPath);
-        if (!fs.existsSync(current)) {
-            current = path.dirname(current);
+        if (!startPath)
+            return null;
+        const resolved = path.resolve(startPath);
+        if (!fs.existsSync(resolved)) {
+            return null;
         }
+        let current = resolved;
         try {
-            if (fs.existsSync(current) && fs.statSync(current).isFile()) {
+            if (fs.statSync(current).isFile()) {
                 current = path.dirname(current);
             }
         }
-        catch { }
+        catch {
+            return null;
+        }
         const markers = [
             'package.json',
             '.git',

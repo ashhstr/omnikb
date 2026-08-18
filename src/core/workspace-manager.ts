@@ -45,24 +45,29 @@ export class WorkspaceManager {
   /**
    * Resolves a workspace instance by identifier or falls back to active/cwd
    */
-  public async resolveInstance(workspaceParam?: string): Promise<WorkspaceInstance> {
-    if (workspaceParam && workspaceParam.trim()) {
-      const trimmed = workspaceParam.trim();
+  public async resolveInstance(workspaceIdOrPath?: string): Promise<WorkspaceInstance> {
+    if (workspaceIdOrPath && workspaceIdOrPath.trim()) {
+      const trimmed = workspaceIdOrPath.trim();
       const existing = this.registry.find(trimmed);
       if (existing) {
         return this.getOrLoad(existing.id);
       }
 
-      // Check if workspaceParam is a path or file on disk and auto-detect project root
-      const detectedRoot = WorkspaceRegistry.detectProjectRoot(trimmed);
-      if (fs.existsSync(detectedRoot)) {
+      const resolved = path.resolve(trimmed);
+      if (!fs.existsSync(resolved)) {
+        throw new Error(`Workspace not found: '${workspaceIdOrPath}'`);
+      }
+
+      // Check if workspaceIdOrPath is a path or file on disk and auto-detect project root
+      const detectedRoot = WorkspaceRegistry.detectProjectRoot(resolved);
+      if (detectedRoot && fs.existsSync(detectedRoot)) {
         const stats = fs.statSync(detectedRoot);
         if (stats.isDirectory()) {
           return this.registerAndLoad(detectedRoot, undefined, true);
         }
       }
 
-      throw new Error(`Workspace not found: '${trimmed}'. Register it first using kb_register.`);
+      throw new Error(`Workspace not found: '${workspaceIdOrPath}'`);
     }
 
     // No param: return active workspace
@@ -171,9 +176,12 @@ export class WorkspaceManager {
   public async switchTo(idOrPathOrName: string): Promise<WorkspaceInstance> {
     let entry = this.registry.find(idOrPathOrName);
     if (!entry) {
-      const detectedRoot = WorkspaceRegistry.detectProjectRoot(idOrPathOrName);
-      if (fs.existsSync(detectedRoot) && fs.statSync(detectedRoot).isDirectory()) {
-        return this.registerAndLoad(detectedRoot, undefined, true);
+      const resolved = path.resolve(idOrPathOrName);
+      if (fs.existsSync(resolved)) {
+        const detectedRoot = WorkspaceRegistry.detectProjectRoot(resolved);
+        if (detectedRoot && fs.existsSync(detectedRoot) && fs.statSync(detectedRoot).isDirectory()) {
+          return this.registerAndLoad(detectedRoot, undefined, true);
+        }
       }
       throw new Error(`Cannot switch: workspace '${idOrPathOrName}' not found on disk or in registry.`);
     }

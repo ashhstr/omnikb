@@ -171,7 +171,10 @@ export class WorkspaceRegistry {
     if (byName) return byName;
 
     // 4. Match closest ancestor workspace path
-    return this.findByPath(trimmed);
+    if (trimmed.includes('/') || trimmed.includes('\\') || path.isAbsolute(trimmed) || fs.existsSync(path.resolve(trimmed))) {
+      return this.findByPath(trimmed);
+    }
+    return null;
   }
 
   public findByPath(targetPath: string): WorkspaceEntry | null {
@@ -216,16 +219,21 @@ export class WorkspaceRegistry {
   /**
    * Discovers the project root directory from any file path by looking for project root markers
    */
-  public static detectProjectRoot(startPath: string): string {
-    let current = path.resolve(startPath);
-    if (!fs.existsSync(current)) {
-      current = path.dirname(current);
+  public static detectProjectRoot(startPath: string): string | null {
+    if (!startPath) return null;
+    const resolved = path.resolve(startPath);
+    if (!fs.existsSync(resolved)) {
+      return null;
     }
+
+    let current = resolved;
     try {
-      if (fs.existsSync(current) && fs.statSync(current).isFile()) {
+      if (fs.statSync(current).isFile()) {
         current = path.dirname(current);
       }
-    } catch {}
+    } catch {
+      return null;
+    }
 
     const markers = [
       'package.json',

@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-18T12:31:37.360Z | **Indexed Files**: 62 | **Total Symbols**: 251 | **Call & Dependency Edges**: 1681
+> **Auto-Updated**: 2026-08-18T13:47:36.197Z | **Indexed Files**: 109 | **Total Symbols**: 562 | **Call & Dependency Edges**: 3008
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `62` |
+| **Source Files** | `109` |
 | **Functions & Methods** | `133` |
 | **Classes & Interfaces** | `55` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `markdown: 10`, `json: 8`, `javascript: 8`, `typescript: 32`, `unknown: 4` |
+| **Languages** | `markdown: 60`, `json: 8`, `javascript: 8`, `typescript: 32`, `unknown: 1` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,14 +18,14 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls | PageRank |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`parse`** | `src/core/parsers/dart.ts` | **25** | 18 | 7 | `0.0369` |
-| **`find`** | `src/core/workspace-registry.ts` | **26** | 19 | 7 | `0.0346` |
-| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0303` |
-| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0296` |
-| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0251` |
-| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0234` |
-| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0214` |
-| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.02` |
+| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.0262` |
+| **`parse`** | `src/core/parsers/dart.ts` | **25** | 18 | 7 | `0.0223` |
+| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0171` |
+| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0169` |
+| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0141` |
+| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0136` |
+| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0132` |
+| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0106` |
 
 ## 3. Web & API Route Registry
 
@@ -35,23 +35,24 @@ The most referenced and interconnected symbols in this repository:
 
 ## 4. Module Map & Component Directory
 
-### `/root` (12 files)
+### `/root` (10 files)
 - **`AGENTS.md`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
 - **`README.md`**: `1 symbols`
 - **`SECURITY.md`**: `1 symbols`
 - **`tsconfig.json`**: `1 symbols`
-- **`LICENSE`**: `1 symbols`
 - **`CHANGELOG.md`**: `1 symbols`
-- **`.npmignore`**: `1 symbols`
 - **`package.json`**: `1 symbols`
-- *(and 2 more files)*
+- **`ORIGINAL_REQUEST.md`**: `9 symbols`
+- **`.gitignore`**: `1 symbols`
 
-### `/docs` (4 files)
+### `/docs` (6 files)
 - **`docs/README.md`**: `1 symbols`
 - **`docs/release-and-commit-rules.md`**: `1 symbols`
 - **`docs/roadmap.md`**: `1 symbols`
+- **`docs/sop-four-pillars.md`**: `5 symbols`
+- **`docs/omnikb-4-pillars-synthesis-report.md`**: `1 symbols`
 - **`docs/work-log.md`**: `1 symbols`
 
 ### `/examples` (6 files)
@@ -86,6 +87,19 @@ The most referenced and interconnected symbols in this repository:
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
 - **`test/run-tests.js`**: `4 symbols`
+
+### `/.agents` (47 files)
+- **`.agents/ORIGINAL_REQUEST.md`**: `9 symbols`
+- **`.agents/explorer_1/DISPATCH.md`**: `2 symbols`
+- **`.agents/explorer_3/DISPATCH.md`**: `2 symbols`
+- **`.agents/explorer_3/handoff.md`**: `9 symbols`
+- **`.agents/explorer_2/DISPATCH.md`**: `2 symbols`
+- **`.agents/explorer_3/progress.md`**: `2 symbols`
+- **`.agents/explorer_3/BRIEFING.md`**: `9 symbols`
+- **`.agents/explorer_2/handoff.md`**: `16 symbols`
+- **`.agents/explorer_2/progress.md`**: `3 symbols`
+- **`.agents/explorer_2/BRIEFING.md`**: `9 symbols`
+- *(and 37 more files)*
 
 ## 5. Agent Instructions for Context Retrieval
 

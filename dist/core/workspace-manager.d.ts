@@ -25,7 +25,7 @@ export declare class WorkspaceManager {
     /**
      * Resolves a workspace instance by identifier or falls back to active/cwd
      */
-    resolveInstance(workspaceParam?: string): Promise<WorkspaceInstance>;
+    resolveInstance(workspaceIdOrPath?: string): Promise<WorkspaceInstance>;
     /**
      * Loads an existing registered workspace into memory (with LRU eviction if full)
      */

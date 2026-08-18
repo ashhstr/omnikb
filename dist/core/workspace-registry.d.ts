@@ -23,5 +23,5 @@ export declare class WorkspaceRegistry {
     /**
      * Discovers the project root directory from any file path by looking for project root markers
      */
-    static detectProjectRoot(startPath: string): string;
+    static detectProjectRoot(startPath: string): string | null;
 }

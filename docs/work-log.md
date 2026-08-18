@@ -2,6 +2,40 @@
 
 Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## YYYY-MM-DD — <judul>`). Jangan hapus entri lama tanpa alasan.
 
+## 2026-08-18 — Workspace Auto-Discovery Non-Existent Path Guard & Synthesis Report Line Sync
+
+- **Problem**: 
+  1. `WorkspaceRegistry.detectProjectRoot(startPath)` melakukan upward crawl bahkan saat `startPath` tidak ada di disk, menyebabkan resolusi workspace ID invalid (seperti `invalid_xyz_123`) salah teresolusi ke direktori parent/cwd alih-alih me-reject error.
+  2. `WorkspaceManager.resolveInstance(workspaceIdOrPath)` tidak memvalidasi keberadaan path di disk sebelum auto-detect project root saat query tidak cocok dengan ID/path terdaftar.
+  3. Nomor baris pada Seksi 4 `docs/omnikb-4-pillars-synthesis-report.md` perlu disinkronkan dengan panjang baris file terbaru.
+- **Fix**:
+  - `src/core/workspace-registry.ts`: `detectProjectRoot` sekarang langsung me-return `null` jika `!fs.existsSync(path.resolve(startPath))`. `find()` diperketat agar hanya memanggil `findByPath` jika query memiliki separator path, bersifat absolut, atau ada di disk.
+  - `src/core/workspace-manager.ts`: `resolveInstance` memverifikasi `fs.existsSync(resolved)` sebelum auto-detect root dan melempar error deskriptif `Workspace not found: '${workspaceIdOrPath}'` jika tidak ditemukan. `switchTo` juga disesuaikan agar menangani `null` detectedRoot secara aman.
+  - `test/run-tests.js`: Menambahkan Suite 10.6 untuk memverifikasi penolakan resolusi workspace ID invalid dan pengecekan return null pada non-existent root path. Menambahkan clean `process.exit(0)` pada penyelesaian test.
+  - `docs/omnikb-4-pillars-synthesis-report.md`: Sinkronisasi nomor baris dan rentang baris di Seksi 4 (`workspace-manager.ts: 1-350`, `workspace-registry.ts: 1-265`).
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% PASS (exit code 0).
+  - `npm test`: 10/10 test suites PASS 100% tanpa defect.
+  - `npm run diagnose`: 522 nodes, 2.960 edges, 105 files, 0 broken edges, 0 missing file references (100% Healthy).
+  - Verifikasi live: `m.resolveInstance('invalid_xyz_123')` berhasil menolak dengan `Correctly rejected: Workspace not found: 'invalid_xyz_123'`.
+
+---
+
+## 2026-08-18 — Comprehensive 4-Pillars Architectural Deconstruction, Growth Analysis & Synthesis Master Report
+
+- **Problem**: 
+  1. Diperlukan riset mendalam mengenai 4 developer tools AI viral (`upstash/context7`, `abhigyanpatwari/GitNexus`, `colbymchenry/codegraph`, `Graphify-Labs/graphify`) untuk membedah arsitektur teknis, faktor adopsi ekosistem, dan keunggulan AST Knowledge Graph dibanding Vector RAG.
+  2. Ketiadaan dokumen sintesis komprehensif yang memetakan korelasi langsung antara inovasi keempat tools tersebut dengan implementasi source code OmniKB serta moats unik kompetitif yang dimilikinya.
+- **Fix**:
+  - `docs/omnikb-4-pillars-synthesis-report.md`: Menulis master report arsitektur & sintesis 7 seksi mendalam yang membedah dekonstruksi 4 pilar pada 5 dimensi teknis (AST/Parsing, Storage/Indexing, Graph Algorithms/Blast Radius/PageRank, MCP Protocol Layer, Token Mechanics), analisis flywheel adopsi MCP (Claude Code, Cursor, Windsurf, Antigravity, OpenCode), mapping implementasi source code lengkap dengan nomor baris kode (`parser-ts-ast.ts`, `parser.ts`, `graph.ts`, `watcher.ts`, `storage.ts`, `mcp-server.ts`, `http-server.ts`, `workspace-manager.ts`, `setup-wizard.ts`, `integrations/`), 5 moats kompetitif OmniKB, benchmark token empiris, dan roadmap masa depan.
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% PASS (exit code 0).
+  - `npm test`: 10/10 test suites PASS (100% zero-defect verification).
+  - `npm run diagnose`: 367 unique nodes, 2,548 edges, 76 tracked source files, 0 broken edges, 0 missing files (100% healthy).
+  - `npm run benchmark-tokens`: Terverifikasi penghematan token empiris sebesar 81.45% – 91.00% pada pengambilan konteks bedah on-demand (~10.500 token vs ~56.617 token naive dump).
+
+---
+
 ## 2026-08-18 — Interactive Setup Wizard, Dynamic Memory Path & Root Drive Auto-Discovery
 
 - **Problem**: 

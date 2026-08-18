@@ -623,6 +623,25 @@ class User extends Model {
     assert.strictEqual(parsedUnreg.success, true);
     assert.strictEqual(registry.list().length, 2);
 
+    // 10.6 Test Invalid Workspace Resolution Rejection & Non-existent Root Detection
+    assert.strictEqual(
+      WorkspaceRegistry.detectProjectRoot('invalid_nonexistent_dir_999'),
+      null,
+      'detectProjectRoot must return null for non-existent paths'
+    );
+
+    let rejected = false;
+    try {
+      await manager.resolveInstance('invalid_xyz_123');
+    } catch (err) {
+      rejected = true;
+      assert.ok(
+        err.message.includes("Workspace not found: 'invalid_xyz_123'"),
+        `Error message must include expected string: ${err.message}`
+      );
+    }
+    assert.strictEqual(rejected, true, 'resolveInstance must reject non-existent workspace ID');
+
     manager.dispose();
     console.log('   ✅ WorkspaceManager & Multi-Workspace MCP tools passed.');
 
@@ -634,7 +653,11 @@ class User extends Model {
   }
 }
 
-runTests().catch((err) => {
-  console.error('❌ Test failed with error:', err);
-  process.exit(1);
-});
+runTests()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('❌ Test failed with error:', err);
+    process.exit(1);
+  });
