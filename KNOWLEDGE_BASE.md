@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-18T14:39:06.340Z | **Indexed Files**: 115 | **Total Symbols**: 609 | **Call & Dependency Edges**: 3250
+> **Auto-Updated**: 2026-08-18T14:50:10.350Z | **Indexed Files**: 116 | **Total Symbols**: 575 | **Call & Dependency Edges**: 3174
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `115` |
+| **Source Files** | `116` |
 | **Functions & Methods** | `138` |
 | **Classes & Interfaces** | `56` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `markdown: 60`, `json: 8`, `javascript: 9`, `typescript: 32`, `unknown: 6` |
+| **Languages** | `markdown: 60`, `json: 8`, `javascript: 9`, `typescript: 32`, `unknown: 7` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,14 +18,14 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls | PageRank |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.0244` |
-| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0206` |
-| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0159` |
-| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0157` |
-| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0131` |
-| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0126` |
-| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0123` |
-| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0098` |
+| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.0254` |
+| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0215` |
+| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0165` |
+| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0164` |
+| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0136` |
+| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0131` |
+| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0128` |
+| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0102` |
 
 ## 3. Web & API Route Registry
 
@@ -35,7 +35,7 @@ The most referenced and interconnected symbols in this repository:
 
 ## 4. Module Map & Component Directory
 
-### `/root` (11 files)
+### `/root` (12 files)
 - **`AGENTS.md`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
 - **`package-lock.json`**: `1 symbols`
@@ -46,7 +46,7 @@ The most referenced and interconnected symbols in this repository:
 - **`.npmignore`**: `1 symbols`
 - **`LICENSE`**: `1 symbols`
 - **`package.json`**: `1 symbols`
-- *(and 1 more files)*
+- *(and 2 more files)*
 
 ### `/docs` (6 files)
 - **`docs/README.md`**: `1 symbols`
