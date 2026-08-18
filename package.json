@@ -6,6 +6,9 @@
   "bin": {
     "omnikb": "dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
