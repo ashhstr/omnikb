@@ -205,10 +205,7 @@ omnikb serve --port 7890
 
 Contributions, issues, and feature requests are welcome!
 
-```bash
-# Run test suite
-npm test
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local development setup, testing guidelines, and quality gates.
 
 ---
 

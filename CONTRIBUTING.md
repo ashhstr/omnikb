@@ -1,59 +1,81 @@
-# OmniKB Engineering & Release Standards
+# 🤝 Contributing to OmniKB
 
-Thank you for your interest in developing and maintaining **OmniKB**! 🚀
-
----
-
-## 🔒 1. Strict Commit Policy
-
-> [!IMPORTANT]
-> **Git commits in this repository are strictly and exclusively reserved for the development, maintenance, and enhancement of the OmniKB knowledge engine.**
-> - Never commit unrelated files, personal scratchpads, or third-party project files.
-> - Never commit secrets, tokens, credentials, private keys, `.env` files, or personal environment configs.
-> - Follow Conventional Commits format: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`.
+Thank you for your interest in contributing to **OmniKB**! 🚀
 
 ---
 
-## 🎯 2. Release Gate & Zero-Tolerance Stability Criteria
-
-A new release (minor, mayor, or major overhaul) may **ONLY** be published when the following criteria are 100% satisfied:
-
-1. **0 Issues, 0 Bugs, 0 Runtime Errors**:
-   - Zero compilation errors (`npm run build`).
-   - Zero test failures across all 8 verification suites (`npm test`).
-   - Zero broken edges or missing file references (`npm run diagnose`).
-2. **Seamless Operation**:
-   - Flawless background auto-sync without crashes, memory leaks, or file-lock conflicts.
-   - 100% Freshness Guarantee verified by content-hashing and atomic reconciliation.
-3. **Multi-Agent Protocol Compatibility**:
-   - 🤖 **Antigravity**: Seamless MCP stdio protocol & tool invocation (`kb_explore`, `kb_impact`, `kb_god_nodes`, `kb_sync`).
-   - 🟣 **Claude / Claude Code**: Full MCP tool schema compliance with rich JSON payload & verbatim lines.
-   - 🟢 **ChatGPT / OpenAI Tools / Codex**: High-speed local REST API endpoints (`/v1/explore`, `/v1/impact`, `/v1/god-nodes`).
-   - 📄 **File-Based Agents (Aider / Chat LLMs)**: Auto-updating real-time `KNOWLEDGE_BASE.md`.
-
----
-
-## 🛠️ Verification & Quality Command
-
-Before any commit or release, execute the automated pre-commit gate:
+## 💻 1. Local Development Setup
 
 ```bash
+# 1. Fork and clone the repository
+git clone https://github.com/ashhstr/omnikb.git
+cd omnikb
+
+# 2. Install dependencies
+npm install
+
+# 3. Compile TypeScript
+npm run build
+
+# 4. Link CLI globally for local testing
+npm link
+```
+
+---
+
+## 🧪 2. Quality Gates & Verification Commands
+
+All contributions must pass 100% of our local quality gates before creating a Pull Request:
+
+```bash
+# 1. Typecheck and build TypeScript
+npm run build
+
+# 2. Run all 11 test suites
+npm test
+
+# 3. Check graph integrity (0 broken edges, 0 missing files)
+npm run diagnose
+
+# 4. Verify token savings benchmark (>80% - 90%+)
+npm run benchmark-tokens
+
+# 5. Run automated pre-commit security & quality gate
 npm run precommit
 ```
 
-To release a new version through the automated GitHub CLI pipeline:
+---
+
+## 🔒 3. Secret Protection & Git Commit Standards
+
+> [!IMPORTANT]
+> **Strict Secret Policy**: Never commit `.env`, private keys (`.pem`, `.key`), credentials, or tokens. The pre-commit gatekeeper automatically halts commits containing sensitive patterns.
+
+Follow the **Conventional Commits** standard:
+- `feat:` New AST parser, graph algorithm, or API endpoint
+- `fix:` Bugfix in watcher, indexer, or MCP tool schema
+- `refactor:` Code restructuring without functional changes
+- `docs:` Documentation, work log, or README updates
+- `chore:` Maintenance, scripts, or dependency updates
+
+---
+
+## 🚀 4. Automated Release Pipeline (Maintainers)
+
+OmniKB uses an automated SemVer release pipeline:
+
 ```bash
-# Minor update (bugfix / perbaikan kecil -> angka belakang)
+# Patch / Bugfix (e.g. v1.5.0 -> v1.5.1)
 npm run release -- minor
 
-# Mayor update (fitur baru / update penting -> angka tengah)
+# Minor / Feature release (e.g. v1.5.0 -> v1.6.0)
 npm run release -- mayor
 
-# Major overhaul (update besar-besaran -> angka depan)
+# Major overhaul (e.g. v1.5.0 -> v2.0.0)
 npm run release -- besar
 ```
 
 ---
 
-## 📜 License
+## 📄 License
 Licensed under the [MIT License](LICENSE).
