@@ -10,6 +10,7 @@ Prioritas kerja terkait OmniKB, opencode, dan skill development. Centang `[x]` s
 - [x] Docs hub `docs/` + work-log
 - [x] Workspace scope hardening & Multi-Agent MCP verification
 - [x] Dedicated Multi-Language Parsers (Dart/Flutter, Vue/Svelte SFC, Prisma, SQL DDL, Java/Kotlin Spring, PHP Laravel)
+- [x] Universal Multi-Workspace Engine (Global Registry `~/.omnikb/registry.json`, Lazy-Load LRU, Cross-Project MCP)
 - [x] Verifikasi ID model HCN Sec: `kat-coder-pro-v2.5`, `Qwen3.8-27B` via `GET https://api.hcnsec.cn/v1beta/models`
 - [ ] Coba pilih model via `/model` (hcnsec/glm-5.2 dsb) & test tool_call
 

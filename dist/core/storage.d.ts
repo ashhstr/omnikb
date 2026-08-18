@@ -9,6 +9,7 @@ export interface StorageDump {
 export declare class KnowledgeStorage {
     private dbDir;
     private dbFilePath;
+    private workspaceRoot;
     nodes: Map<string, CodeNode>;
     edges: Map<string, CodeEdge>;
     files: Map<string, FileMetadata>;
@@ -18,6 +19,7 @@ export declare class KnowledgeStorage {
     fileEdgesIndex: Map<string, Set<string>>;
     tokenIndex: Map<string, Set<string>>;
     constructor(workspaceRoot: string);
+    getWorkspaceRoot(): string;
     /**
      * Initializes storage directory and loads existing graph state if present
      */

@@ -37,26 +37,53 @@ exports.LocalHttpServer = void 0;
 const http = __importStar(require("http"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const workspace_manager_1 = require("../core/workspace-manager");
+const workspace_registry_1 = require("../core/workspace-registry");
 class LocalHttpServer {
     port;
-    graph;
-    storage;
-    watcher;
-    workspaceRoot;
+    manager;
+    fallbackWorkspaceRoot;
+    fallbackInstance;
     server = null;
-    constructor(port, workspaceRoot, graph, storage, watcher) {
+    constructor(port, workspaceRootOrManager, graph, storage, watcher) {
         this.port = port;
-        this.workspaceRoot = workspaceRoot;
-        this.graph = graph;
-        this.storage = storage;
-        this.watcher = watcher;
+        if (workspaceRootOrManager instanceof workspace_manager_1.WorkspaceManager) {
+            this.manager = workspaceRootOrManager;
+        }
+        else {
+            const wsRoot = workspaceRootOrManager;
+            this.fallbackWorkspaceRoot = wsRoot;
+            const registry = new workspace_registry_1.WorkspaceRegistry();
+            registry.register(wsRoot);
+            registry.setActive(wsRoot);
+            this.manager = new workspace_manager_1.WorkspaceManager(registry);
+            if (graph && storage && watcher) {
+                this.fallbackInstance = { graph, storage, watcher };
+            }
+        }
+    }
+    async resolveInstance(workspaceParam) {
+        if (!workspaceParam && this.fallbackInstance) {
+            return {
+                ...this.fallbackInstance,
+                workspaceRoot: this.fallbackWorkspaceRoot || this.fallbackInstance.graph.getWorkspaceRoot(),
+            };
+        }
+        const instance = await this.manager.resolveInstance(workspaceParam);
+        return {
+            graph: instance.graph,
+            storage: instance.storage,
+            watcher: instance.watcher,
+            workspaceRoot: instance.entry.rootPath,
+            name: instance.entry.name,
+        };
     }
     start() {
         return new Promise((resolve) => {
             this.server = http.createServer(async (req, res) => {
                 // Set CORS headers for universal local access
                 res.setHeader('Access-Control-Allow-Origin', '*');
-                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
                 res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
                 if (req.method === 'OPTIONS') {
                     res.writeHead(204);
@@ -69,58 +96,119 @@ class LocalHttpServer {
                 try {
                     // 1. Health check
                     if (pathname === '/v1/health' || pathname === '/') {
+                        const inst = await this.resolveInstance(query.workspace);
                         this.sendJson(res, 200, {
                             status: 'healthy',
-                            version: '1.0.0',
-                            engine: 'OmniKB Real-Time Universal Engine',
-                            stats: this.graph.getStats(),
+                            version: '1.4.0',
+                            engine: 'OmniKB Real-Time Multi-Workspace Engine',
+                            activeWorkspace: this.manager.getRegistry().getActive(),
+                            stats: inst.graph.getStats(),
                         });
                         return;
                     }
-                    // 2. Stats
+                    // 2. Workspace Management Endpoints
+                    if (pathname === '/v1/workspaces' && req.method === 'GET') {
+                        const list = this.manager.getRegistry().list();
+                        const active = this.manager.getRegistry().getActive();
+                        this.sendJson(res, 200, { activeWorkspace: active, workspaces: list });
+                        return;
+                    }
+                    if (pathname === '/v1/workspaces/register' && req.method === 'POST') {
+                        const body = await this.readBodyJson(req);
+                        if (!body.path) {
+                            this.sendJson(res, 400, { error: 'Missing required field: path' });
+                            return;
+                        }
+                        const instance = await this.manager.registerAndLoad(body.path, body.name, true);
+                        this.sendJson(res, 200, {
+                            success: true,
+                            message: `Workspace '${instance.entry.name}' registered and indexed.`,
+                            workspace: instance.entry,
+                            stats: instance.graph.getStats(),
+                        });
+                        return;
+                    }
+                    if (pathname === '/v1/workspaces/switch' && req.method === 'POST') {
+                        const body = await this.readBodyJson(req);
+                        const wsTarget = body.workspace || query.workspace;
+                        if (!wsTarget) {
+                            this.sendJson(res, 400, { error: 'Missing required field: workspace' });
+                            return;
+                        }
+                        const instance = await this.manager.switchTo(wsTarget);
+                        this.sendJson(res, 200, {
+                            success: true,
+                            message: `Switched active workspace to '${instance.entry.name}'.`,
+                            activeWorkspace: instance.entry,
+                        });
+                        return;
+                    }
+                    if (pathname === '/v1/workspaces/unregister' && (req.method === 'POST' || req.method === 'DELETE')) {
+                        const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+                        const wsTarget = body.workspace || query.workspace;
+                        if (!wsTarget) {
+                            this.sendJson(res, 400, { error: 'Missing required field: workspace' });
+                            return;
+                        }
+                        const success = await this.manager.unregister(wsTarget);
+                        this.sendJson(res, 200, {
+                            success,
+                            message: success
+                                ? `Workspace '${wsTarget}' unregistered successfully.`
+                                : `Workspace '${wsTarget}' not found.`,
+                        });
+                        return;
+                    }
+                    // 3. Stats
                     if (pathname === '/v1/stats' && req.method === 'GET') {
-                        this.sendJson(res, 200, this.graph.getStats());
+                        const inst = await this.resolveInstance(query.workspace);
+                        this.sendJson(res, 200, { workspace: inst.workspaceRoot, ...inst.graph.getStats() });
                         return;
                     }
-                    // 3. Full Graph Export (JSON)
+                    // 4. Full Graph Export (JSON)
                     if (pathname === '/v1/graph' && req.method === 'GET') {
-                        const nodes = Array.from(this.storage.nodes.values());
-                        const edges = Array.from(this.storage.edges.values());
-                        this.sendJson(res, 200, { nodes, edges });
+                        const inst = await this.resolveInstance(query.workspace);
+                        const nodes = Array.from(inst.storage.nodes.values());
+                        const edges = Array.from(inst.storage.edges.values());
+                        this.sendJson(res, 200, { workspace: inst.workspaceRoot, nodes, edges });
                         return;
                     }
-                    // 4. LLM Prompt Context (Formatted Markdown for direct prompt injection)
+                    // 5. LLM Prompt Context (Formatted Markdown)
                     if (pathname === '/v1/context' && req.method === 'GET') {
-                        const kbPath = path.join(this.workspaceRoot, 'KNOWLEDGE_BASE.md');
+                        const inst = await this.resolveInstance(query.workspace);
+                        const kbPath = path.join(inst.workspaceRoot, 'KNOWLEDGE_BASE.md');
                         if (fs.existsSync(kbPath)) {
                             const content = fs.readFileSync(kbPath, 'utf8');
                             res.writeHead(200, { 'Content-Type': 'text/markdown; charset=utf-8' });
                             res.end(content);
                         }
                         else {
-                            this.sendJson(res, 404, { error: 'KNOWLEDGE_BASE.md not found yet.' });
+                            this.sendJson(res, 404, { error: `KNOWLEDGE_BASE.md not found yet for workspace: ${inst.workspaceRoot}` });
                         }
                         return;
                     }
-                    // 5. Visualizer UI
+                    // 6. Visualizer UI
                     if (pathname === '/visual' && req.method === 'GET') {
-                        const visualPath = path.join(this.workspaceRoot, '.omnikb', 'graph.html');
+                        const inst = await this.resolveInstance(query.workspace);
+                        const visualPath = path.join(inst.workspaceRoot, '.omnikb', 'graph.html');
                         if (fs.existsSync(visualPath)) {
                             const content = fs.readFileSync(visualPath, 'utf8');
                             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
                             res.end(content);
                         }
                         else {
-                            this.sendJson(res, 404, { error: 'Visualizer graph.html not generated yet.' });
+                            this.sendJson(res, 404, { error: `Visualizer graph.html not generated yet for workspace: ${inst.workspaceRoot}` });
                         }
                         return;
                     }
-                    // 6. Action Endpoints (GET with query params or POST with JSON body)
+                    // 7. Action Endpoints (Explore, Impact, Search, God Nodes, Sync)
                     if (pathname === '/v1/explore' && (req.method === 'GET' || req.method === 'POST')) {
                         const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
                         const q = body.query || query.query || '';
                         const maxDepth = parseInt(body.maxDepth || query.maxDepth || '3', 10);
-                        const result = this.graph.explore(q, maxDepth);
+                        const wsParam = body.workspace || query.workspace;
+                        const inst = await this.resolveInstance(wsParam);
+                        const result = inst.graph.explore(q, maxDepth);
                         this.sendJson(res, 200, result);
                         return;
                     }
@@ -128,7 +216,9 @@ class LocalHttpServer {
                         const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
                         const target = body.target || query.target || '';
                         const maxDepth = parseInt(body.maxDepth || query.maxDepth || '5', 10);
-                        const result = this.graph.calculateImpact(target, maxDepth);
+                        const wsParam = body.workspace || query.workspace;
+                        const inst = await this.resolveInstance(wsParam);
+                        const result = inst.graph.calculateImpact(target, maxDepth);
                         this.sendJson(res, 200, result);
                         return;
                     }
@@ -136,24 +226,32 @@ class LocalHttpServer {
                         const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
                         const q = body.query || query.query || '';
                         const limit = parseInt(body.limit || query.limit || '20', 10);
-                        const result = this.storage.search(q, limit);
+                        const wsParam = body.workspace || query.workspace;
+                        const inst = await this.resolveInstance(wsParam);
+                        const result = inst.storage.search(q, limit);
                         this.sendJson(res, 200, result);
                         return;
                     }
                     if (pathname === '/v1/god-nodes' && (req.method === 'GET' || req.method === 'POST')) {
                         const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
                         const limit = parseInt(body.limit || query.limit || '10', 10);
-                        const stats = this.graph.getStats();
+                        const wsParam = body.workspace || query.workspace;
+                        const inst = await this.resolveInstance(wsParam);
+                        const stats = inst.graph.getStats();
                         this.sendJson(res, 200, {
+                            workspace: inst.workspaceRoot,
                             godNodes: stats.godNodes.slice(0, limit),
                         });
                         return;
                     }
                     if (pathname === '/v1/sync' && (req.method === 'GET' || req.method === 'POST')) {
-                        const stats = await this.watcher.forceReconcile();
+                        const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
+                        const wsParam = body.workspace || query.workspace;
+                        const inst = await this.resolveInstance(wsParam);
+                        const stats = await inst.watcher.forceReconcile();
                         this.sendJson(res, 200, {
                             success: true,
-                            message: 'Workspace successfully reconciled and refreshed',
+                            message: `Workspace '${inst.workspaceRoot}' successfully reconciled and refreshed`,
                             stats,
                         });
                         return;
@@ -175,7 +273,7 @@ class LocalHttpServer {
                 }
             });
             this.server.listen(this.port, '127.0.0.1', () => {
-                console.log(`[OmniKB REST API] Universal server running at http://127.0.0.1:${this.port}`);
+                console.log(`[OmniKB REST API] Multi-Workspace server running at http://127.0.0.1:${this.port}`);
                 console.log(`[OmniKB REST API] Interactive Visualizer: http://127.0.0.1:${this.port}/visual`);
                 resolve();
             });
@@ -199,15 +297,12 @@ class LocalHttpServer {
         return new Promise((resolve, reject) => {
             let data = '';
             const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024; // 5MB limit
-            let receivedBytes = 0;
             req.on('data', (chunk) => {
-                receivedBytes += chunk.length;
-                if (receivedBytes > MAX_PAYLOAD_BYTES) {
+                data += chunk;
+                if (data.length > MAX_PAYLOAD_BYTES) {
                     req.destroy();
                     reject(new Error('Payload too large: maximum allowed is 5MB'));
-                    return;
                 }
-                data += chunk;
             });
             req.on('end', () => {
                 try {

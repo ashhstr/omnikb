@@ -35,15 +35,43 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.McpServer = void 0;
 const readline = __importStar(require("readline"));
+const workspace_manager_1 = require("../core/workspace-manager");
+const workspace_registry_1 = require("../core/workspace-registry");
 class McpServer {
-    graph;
-    storage;
-    watcher;
+    manager;
+    fallbackInstance;
     rl = null;
-    constructor(graph, storage, watcher) {
-        this.graph = graph;
-        this.storage = storage;
-        this.watcher = watcher;
+    constructor(graphOrManager, storage, watcher) {
+        if (graphOrManager instanceof workspace_manager_1.WorkspaceManager) {
+            this.manager = graphOrManager;
+        }
+        else {
+            const graph = graphOrManager;
+            const wsRoot = graph.getWorkspaceRoot();
+            const registry = new workspace_registry_1.WorkspaceRegistry();
+            registry.register(wsRoot);
+            registry.setActive(wsRoot);
+            this.manager = new workspace_manager_1.WorkspaceManager(registry);
+            if (storage && watcher) {
+                this.fallbackInstance = { graph, storage, watcher };
+            }
+        }
+    }
+    async resolveInstance(workspaceParam) {
+        if (!workspaceParam && this.fallbackInstance) {
+            return {
+                ...this.fallbackInstance,
+                workspaceRoot: this.fallbackInstance.graph.getWorkspaceRoot(),
+            };
+        }
+        const instance = await this.manager.resolveInstance(workspaceParam);
+        return {
+            graph: instance.graph,
+            storage: instance.storage,
+            watcher: instance.watcher,
+            workspaceRoot: instance.entry.rootPath,
+            name: instance.entry.name,
+        };
     }
     /**
      * Starts reading JSON-RPC requests from standard input (stdio)
@@ -74,7 +102,7 @@ class McpServer {
                 process.stdout.write(JSON.stringify(errRes) + '\n');
             }
         });
-        console.error('[OmniKB MCP] Stdio server initialized.');
+        console.error('[OmniKB MCP] Universal Multi-Workspace Stdio server initialized.');
     }
     async handleRequest(req) {
         const { method, params, id } = req;
@@ -87,7 +115,9 @@ class McpServer {
                 };
             case 'notifications/initialized':
                 return null;
-            case 'initialize':
+            case 'initialize': {
+                const activeEntry = this.manager.getRegistry().getActive();
+                const activePath = activeEntry?.rootPath || (this.fallbackInstance ? this.fallbackInstance.graph.getWorkspaceRoot() : 'Dynamic Multi-Workspace');
                 return {
                     jsonrpc: '2.0',
                     id,
@@ -95,19 +125,22 @@ class McpServer {
                         protocolVersion: '2024-11-05',
                         serverInfo: {
                             name: 'omnikb-mcp-server',
-                            version: '1.0.0',
+                            version: '1.4.0',
                         },
                         capabilities: {
                             tools: {},
                         },
-                        instructions: `OmniKB is your pre-indexed real-time Knowledge Base and Code Graph engine.
-- Active Workspace: ${this.graph.getWorkspaceRoot()}
+                        instructions: `OmniKB is your pre-indexed real-time Knowledge Base and Multi-Workspace Code Graph engine.
+- Active Workspace: ${activePath}
+- Call 'kb_workspaces' to list all registered project workspaces.
+- Call 'kb_register' or 'kb_switch' to manage and switch between different projects seamlessly.
 - Call 'kb_explore' for any structural question ("how does X work", "call flow for Y", or symbol lookup) to get exact source code, caller graph, and blast radius in 1 step.
 - Call 'kb_impact' before refactoring to check all files and routes that depend on a symbol.
 - Call 'kb_search' for instant full-text symbol searches.
-The index auto-syncs continuously on every save.`,
+All tools support an optional 'workspace' parameter to query any registered project on-demand.`,
                     },
                 };
+            }
             case 'tools/list':
                 return {
                     jsonrpc: '2.0',
@@ -128,6 +161,10 @@ The index auto-syncs continuously on every save.`,
                                             type: 'number',
                                             description: 'Maximum depth for call graph and impact traversal (default: 3).',
                                         },
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
+                                        },
                                     },
                                     required: ['query'],
                                 },
@@ -145,6 +182,10 @@ The index auto-syncs continuously on every save.`,
                                         maxDepth: {
                                             type: 'number',
                                             description: 'Max upstream dependency depth (default: 5).',
+                                        },
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
                                         },
                                     },
                                     required: ['target'],
@@ -164,6 +205,10 @@ The index auto-syncs continuously on every save.`,
                                             type: 'number',
                                             description: 'Maximum results to return (default: 20).',
                                         },
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
+                                        },
                                     },
                                     required: ['query'],
                                 },
@@ -173,7 +218,12 @@ The index auto-syncs continuously on every save.`,
                                 description: 'Returns top-level repository metrics, God Nodes (most coupled components), and HTTP route map.',
                                 inputSchema: {
                                     type: 'object',
-                                    properties: {},
+                                    properties: {
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
+                                        },
+                                    },
                                 },
                             },
                             {
@@ -186,6 +236,10 @@ The index auto-syncs continuously on every save.`,
                                             type: 'number',
                                             description: 'Number of top god nodes to return (default: 10).',
                                         },
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
+                                        },
                                     },
                                 },
                             },
@@ -194,7 +248,12 @@ The index auto-syncs continuously on every save.`,
                                 description: 'Returns real-time sync status, watched files, and pending queue.',
                                 inputSchema: {
                                     type: 'object',
-                                    properties: {},
+                                    properties: {
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
+                                        },
+                                    },
                                 },
                             },
                             {
@@ -207,7 +266,65 @@ The index auto-syncs continuously on every save.`,
                                             type: 'boolean',
                                             description: 'Force full re-read and reference re-linking (default: true).',
                                         },
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Optional workspace name, path, or ID. Defaults to active workspace.',
+                                        },
                                     },
+                                },
+                            },
+                            {
+                                name: 'kb_workspaces',
+                                description: 'Lists all registered workspaces in OmniKB with current active indicator and stats.',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {},
+                                },
+                            },
+                            {
+                                name: 'kb_register',
+                                description: 'Registers a new workspace directory into OmniKB global registry and initiates indexing.',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        path: {
+                                            type: 'string',
+                                            description: 'Absolute or relative path to the workspace root directory.',
+                                        },
+                                        name: {
+                                            type: 'string',
+                                            description: 'Optional custom display name for the workspace.',
+                                        },
+                                    },
+                                    required: ['path'],
+                                },
+                            },
+                            {
+                                name: 'kb_unregister',
+                                description: 'Unregisters a workspace from OmniKB.',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Workspace name, root path, or ID to unregister.',
+                                        },
+                                    },
+                                    required: ['workspace'],
+                                },
+                            },
+                            {
+                                name: 'kb_switch',
+                                description: 'Switches the default active workspace context.',
+                                inputSchema: {
+                                    type: 'object',
+                                    properties: {
+                                        workspace: {
+                                            type: 'string',
+                                            description: 'Workspace name, root path, or ID to switch to.',
+                                        },
+                                    },
+                                    required: ['workspace'],
                                 },
                             },
                         ],
@@ -218,43 +335,84 @@ The index auto-syncs continuously on every save.`,
                 const args = params?.arguments || {};
                 try {
                     let outputText = '';
-                    if (toolName === 'kb_explore') {
-                        const res = this.graph.explore(args.query, args.maxDepth || 3);
-                        outputText = JSON.stringify(res, null, 2);
+                    // 1. Workspace Registry Management Tools
+                    if (toolName === 'kb_workspaces') {
+                        const list = this.manager.getRegistry().list();
+                        const active = this.manager.getRegistry().getActive();
+                        outputText = JSON.stringify({ activeWorkspace: active, workspaces: list }, null, 2);
                     }
-                    else if (toolName === 'kb_impact') {
-                        const res = this.graph.calculateImpact(args.target, args.maxDepth || 5);
-                        outputText = JSON.stringify(res, null, 2);
+                    else if (toolName === 'kb_register') {
+                        if (!args.path)
+                            throw new Error('Path is required for kb_register');
+                        const instance = await this.manager.registerAndLoad(args.path, args.name, true);
+                        outputText = JSON.stringify({
+                            success: true,
+                            message: `Workspace '${instance.entry.name}' registered and indexed successfully.`,
+                            workspace: instance.entry,
+                            stats: instance.graph.getStats(),
+                        }, null, 2);
                     }
-                    else if (toolName === 'kb_search') {
-                        const res = this.storage.search(args.query, args.limit || 20);
-                        outputText = JSON.stringify(res, null, 2);
+                    else if (toolName === 'kb_unregister') {
+                        if (!args.workspace)
+                            throw new Error('Workspace identifier is required for kb_unregister');
+                        const success = await this.manager.unregister(args.workspace);
+                        outputText = JSON.stringify({
+                            success,
+                            message: success
+                                ? `Workspace '${args.workspace}' unregistered successfully.`
+                                : `Workspace '${args.workspace}' not found in registry.`,
+                        }, null, 2);
                     }
-                    else if (toolName === 'kb_architecture') {
-                        const stats = this.graph.getStats();
-                        outputText = JSON.stringify(stats, null, 2);
-                    }
-                    else if (toolName === 'kb_god_nodes') {
-                        const stats = this.graph.getStats();
-                        const limit = args.limit || 10;
-                        outputText = JSON.stringify({ godNodes: stats.godNodes.slice(0, limit) }, null, 2);
-                    }
-                    else if (toolName === 'kb_status') {
-                        const stats = this.graph.getStats();
-                        const pending = this.watcher.getPendingQueue();
-                        const workspaceRoot = this.graph.getWorkspaceRoot();
-                        outputText = JSON.stringify({ workspaceRoot, stats, pendingQueue: pending }, null, 2);
-                    }
-                    else if (toolName === 'kb_sync') {
-                        const stats = await this.watcher.forceReconcile();
-                        outputText = JSON.stringify({ success: true, message: 'Workspace successfully reconciled and refreshed', stats }, null, 2);
+                    else if (toolName === 'kb_switch') {
+                        if (!args.workspace)
+                            throw new Error('Workspace identifier is required for kb_switch');
+                        const instance = await this.manager.switchTo(args.workspace);
+                        outputText = JSON.stringify({
+                            success: true,
+                            message: `Active workspace switched to '${instance.entry.name}'.`,
+                            activeWorkspace: instance.entry,
+                        }, null, 2);
                     }
                     else {
-                        return {
-                            jsonrpc: '2.0',
-                            id,
-                            error: { code: -32601, message: `Unknown tool: ${toolName}` },
-                        };
+                        // 2. Query / Inspection Tools (workspace-aware)
+                        const inst = await this.resolveInstance(args.workspace);
+                        if (toolName === 'kb_explore') {
+                            const res = inst.graph.explore(args.query, args.maxDepth || 3);
+                            outputText = JSON.stringify(res, null, 2);
+                        }
+                        else if (toolName === 'kb_impact') {
+                            const res = inst.graph.calculateImpact(args.target, args.maxDepth || 5);
+                            outputText = JSON.stringify(res, null, 2);
+                        }
+                        else if (toolName === 'kb_search') {
+                            const res = inst.storage.search(args.query, args.limit || 20);
+                            outputText = JSON.stringify(res, null, 2);
+                        }
+                        else if (toolName === 'kb_architecture') {
+                            const stats = inst.graph.getStats();
+                            outputText = JSON.stringify({ workspaceRoot: inst.workspaceRoot, stats }, null, 2);
+                        }
+                        else if (toolName === 'kb_god_nodes') {
+                            const stats = inst.graph.getStats();
+                            const limit = args.limit || 10;
+                            outputText = JSON.stringify({ workspaceRoot: inst.workspaceRoot, godNodes: stats.godNodes.slice(0, limit) }, null, 2);
+                        }
+                        else if (toolName === 'kb_status') {
+                            const stats = inst.graph.getStats();
+                            const pending = inst.watcher.getPendingQueue();
+                            outputText = JSON.stringify({ workspaceRoot: inst.workspaceRoot, stats, pendingQueue: pending }, null, 2);
+                        }
+                        else if (toolName === 'kb_sync') {
+                            const stats = await inst.watcher.forceReconcile();
+                            outputText = JSON.stringify({ success: true, message: `Workspace '${inst.workspaceRoot}' successfully reconciled and refreshed`, stats }, null, 2);
+                        }
+                        else {
+                            return {
+                                jsonrpc: '2.0',
+                                id,
+                                error: { code: -32601, message: `Unknown tool: ${toolName}` },
+                            };
+                        }
                     }
                     return {
                         jsonrpc: '2.0',

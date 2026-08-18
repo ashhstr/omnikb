@@ -1,6 +1,7 @@
 import { GraphEngine } from '../core/graph';
 import { KnowledgeStorage } from '../core/storage';
 import { WorkspaceWatcher } from '../core/watcher';
+import { WorkspaceManager } from '../core/workspace-manager';
 export interface JsonRpcRequest {
     jsonrpc: '2.0';
     id?: string | number | null;
@@ -18,11 +19,11 @@ export interface JsonRpcResponse {
     };
 }
 export declare class McpServer {
-    private graph;
-    private storage;
-    private watcher;
+    private manager;
+    private fallbackInstance?;
     private rl;
-    constructor(graph: GraphEngine, storage: KnowledgeStorage, watcher: WorkspaceWatcher);
+    constructor(graphOrManager: GraphEngine | WorkspaceManager, storage?: KnowledgeStorage, watcher?: WorkspaceWatcher);
+    private resolveInstance;
     /**
      * Starts reading JSON-RPC requests from standard input (stdio)
      */

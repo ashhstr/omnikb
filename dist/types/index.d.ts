@@ -116,3 +116,18 @@ export interface WatcherConfig {
     autoGenerateVisual?: boolean;
     onSyncComplete?: (stats: GraphStats) => void;
 }
+export interface WorkspaceEntry {
+    id: string;
+    name: string;
+    rootPath: string;
+    lastAccessed: number;
+    totalNodes: number;
+    totalEdges: number;
+    totalFiles: number;
+    isCurrent?: boolean;
+}
+export interface WorkspaceRegistryData {
+    version: number;
+    activeWorkspaceId: string | null;
+    workspaces: WorkspaceEntry[];
+}

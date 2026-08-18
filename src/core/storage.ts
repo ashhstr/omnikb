@@ -13,6 +13,7 @@ export interface StorageDump {
 export class KnowledgeStorage {
   private dbDir: string;
   private dbFilePath: string;
+  private workspaceRoot: string;
 
   public nodes: Map<string, CodeNode> = new Map();
   public edges: Map<string, CodeEdge> = new Map();
@@ -26,8 +27,13 @@ export class KnowledgeStorage {
   public tokenIndex: Map<string, Set<string>> = new Map(); // Token -> Set of Node IDs
 
   constructor(workspaceRoot: string) {
+    this.workspaceRoot = workspaceRoot;
     this.dbDir = path.join(workspaceRoot, '.omnikb');
     this.dbFilePath = path.join(this.dbDir, 'knowledge-graph.json');
+  }
+
+  public getWorkspaceRoot(): string {
+    return this.workspaceRoot;
   }
 
   /**
@@ -97,10 +103,17 @@ export class KnowledgeStorage {
     };
 
     const jsonStr = JSON.stringify(dump, null, 2);
+    const tmpFilePath = `${this.dbFilePath}.${Date.now()}.tmp`;
     try {
-      await fs.promises.writeFile(this.dbFilePath, jsonStr, 'utf8');
+      await fs.promises.writeFile(tmpFilePath, jsonStr, 'utf8');
+      await fs.promises.rename(tmpFilePath, this.dbFilePath);
     } catch (err: any) {
       console.error(`[OmniKB Storage] Failed to write index: ${err?.message || err}`);
+      try {
+        if (fs.existsSync(tmpFilePath)) {
+          fs.unlinkSync(tmpFilePath);
+        }
+      } catch {}
     }
   }
 

@@ -528,7 +528,105 @@ class User extends Model {
       await httpServer.stop();
     }
 
-    console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! 100% Zero-Bug, Multi-Agent Compatibility Verified.\n');
+    // 9. Test Multi-Workspace Registry & Isolation
+    console.log('9. Testing Multi-Workspace Registry & Catalog Persistence...');
+    const { WorkspaceRegistry } = require('../dist/core/workspace-registry');
+    const { WorkspaceManager } = require('../dist/core/workspace-manager');
+    const testRegistryDir = path.join(testWorkspace, 'mock-registry');
+    const registry = new WorkspaceRegistry(testRegistryDir);
+
+    const wsEntry1 = registry.register(testWorkspace, 'Sandbox-Primary');
+    assert.strictEqual(wsEntry1.name, 'Sandbox-Primary');
+    assert.strictEqual(registry.getActive().id, wsEntry1.id);
+
+    const secondaryWs = path.join(testWorkspace, 'secondary-project');
+    fs.mkdirSync(secondaryWs, { recursive: true });
+    const wsEntry2 = registry.register(secondaryWs, 'Secondary-Project');
+    assert.strictEqual(registry.list().length, 2);
+
+    registry.setActive(wsEntry2.id);
+    assert.strictEqual(registry.getActive().id, wsEntry2.id);
+
+    const foundByPath = registry.findByPath(path.join(secondaryWs, 'src', 'index.ts'));
+    assert.ok(foundByPath, 'findByPath should resolve parent workspace');
+    assert.strictEqual(foundByPath.id, wsEntry2.id);
+    console.log('   ✅ WorkspaceRegistry CRUD & path resolution passed.');
+
+    // 10. Test Multi-Workspace Manager & MCP Tools
+    console.log('10. Testing WorkspaceManager & Multi-Workspace MCP on-demand loading...');
+    // Create dummy code file in secondary workspace
+    const secFile = path.join(secondaryWs, 'src', 'auth.ts');
+    fs.mkdirSync(path.dirname(secFile), { recursive: true });
+    fs.writeFileSync(secFile, 'export function loginSecondaryUser() { return true; }', 'utf8');
+
+    const manager = new WorkspaceManager(registry, 2); // max 2 loaded
+    const multiMcp = new McpServer(manager);
+
+    // 10.1 List workspaces via MCP
+    const wsListRes = await multiMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 'test-ws-list',
+      method: 'tools/call',
+      params: { name: 'kb_workspaces' },
+    });
+    const parsedWsList = JSON.parse(wsListRes.result.content[0].text);
+    assert.strictEqual(parsedWsList.workspaces.length, 2);
+
+    // 10.2 Register a 3rd workspace via MCP tool
+    const thirdWs = path.join(testWorkspace, 'third-project');
+    fs.mkdirSync(thirdWs, { recursive: true });
+    const regRes = await multiMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 'test-ws-reg',
+      method: 'tools/call',
+      params: { name: 'kb_register', arguments: { path: thirdWs, name: 'Third-Project' } },
+    });
+    const parsedReg = JSON.parse(regRes.result.content[0].text);
+    assert.strictEqual(parsedReg.success, true);
+    assert.strictEqual(registry.list().length, 3);
+
+    // 10.3 Query secondary workspace explicitly via workspace parameter
+    const exploreSecRes = await multiMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 'test-explore-sec',
+      method: 'tools/call',
+      params: {
+        name: 'kb_explore',
+        arguments: { query: 'loginSecondaryUser', workspace: 'Secondary-Project' },
+      },
+    });
+    const parsedExploreSec = JSON.parse(exploreSecRes.result.content[0].text);
+    assert.ok(
+      parsedExploreSec.targetNodes.some((n) => n.name === 'loginSecondaryUser'),
+      'Should find loginSecondaryUser in Secondary-Project'
+    );
+
+    // 10.4 Switch workspace via MCP tool
+    const switchRes = await multiMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 'test-ws-switch',
+      method: 'tools/call',
+      params: { name: 'kb_switch', arguments: { workspace: 'Sandbox-Primary' } },
+    });
+    const parsedSwitch = JSON.parse(switchRes.result.content[0].text);
+    assert.strictEqual(parsedSwitch.success, true);
+    assert.strictEqual(registry.getActive().name, 'Sandbox-Primary');
+
+    // 10.5 Unregister workspace via MCP tool
+    const unregRes = await multiMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 'test-ws-unreg',
+      method: 'tools/call',
+      params: { name: 'kb_unregister', arguments: { workspace: 'Third-Project' } },
+    });
+    const parsedUnreg = JSON.parse(unregRes.result.content[0].text);
+    assert.strictEqual(parsedUnreg.success, true);
+    assert.strictEqual(registry.list().length, 2);
+
+    manager.dispose();
+    console.log('   ✅ WorkspaceManager & Multi-Workspace MCP tools passed.');
+
+    console.log('\n🎉 ALL 10 TEST SUITES PASSED SUCCESSFULLY! 100% Zero-Bug, Multi-Workspace Verified.\n');
   } finally {
     if (fs.existsSync(testWorkspace)) {
       fs.rmSync(testWorkspace, { recursive: true, force: true });

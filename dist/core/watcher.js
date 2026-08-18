@@ -60,8 +60,21 @@ class WorkspaceWatcher {
                 'build',
                 'out',
                 '.next',
+                '.nuxt',
+                '.output',
+                '.turbo',
+                '.svelte-kit',
+                '.dart_tool',
                 'coverage',
                 '.cache',
+                '__pycache__',
+                'venv',
+                '.venv',
+                'vendor',
+                'target',
+                '.gradle',
+                'obj',
+                'bin',
                 '*.tmp',
                 '*.log',
                 'KNOWLEDGE_BASE.md',
@@ -287,8 +300,17 @@ class WorkspaceWatcher {
             }
             try {
                 const stats = fs.statSync(fullPath);
-                if (stats.isDirectory())
+                if (stats.isDirectory()) {
+                    // If a new directory was created, collect and index its contained files
+                    const nested = this.collectFiles(fullPath);
+                    for (const n of nested) {
+                        const nRel = path.relative(this.config.rootPath, n).replace(/\\/g, '/');
+                        if (!this.shouldIgnore(nRel)) {
+                            this.pendingFiles.add(nRel);
+                        }
+                    }
                     continue;
+                }
                 const content = fs.readFileSync(fullPath, 'utf8');
                 const hash = parser_1.CodeParser.computeHash(content);
                 // Check if content hash actually changed
@@ -337,6 +359,25 @@ class WorkspaceWatcher {
         const results = [];
         if (!fs.existsSync(dir))
             return results;
+        const supportedExts = new Set([
+            '.ts', '.tsx', '.mts', '.cts',
+            '.js', '.jsx', '.mjs', '.cjs',
+            '.py', '.pyw',
+            '.go',
+            '.rs',
+            '.dart',
+            '.vue', '.svelte', '.astro',
+            '.prisma',
+            '.sql',
+            '.kt', '.kts', '.java', '.cs',
+            '.cpp', '.cc', '.cxx', '.c', '.h', '.hpp',
+            '.php',
+            '.rb',
+            '.swift',
+            '.md', '.mdx', '.markdown',
+            '.json',
+            '.yaml', '.yml',
+        ]);
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {
             const fullPath = path.join(dir, entry.name);
@@ -348,11 +389,7 @@ class WorkspaceWatcher {
             }
             else if (entry.isFile()) {
                 const ext = path.extname(entry.name).toLowerCase();
-                if ([
-                    '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-                    '.py', '.go', '.rs', '.java', '.cs', '.cpp', '.c', '.h', '.hpp',
-                    '.md', '.mdx', '.json', '.yaml', '.yml', '.sql'
-                ].includes(ext)) {
+                if (supportedExts.has(ext)) {
                     results.push(fullPath);
                 }
             }

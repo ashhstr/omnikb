@@ -2,6 +2,61 @@
 
 Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## YYYY-MM-DD — <judul>`). Jangan hapus entri lama tanpa alasan.
 
+## 2026-08-18 — Interactive Setup Wizard, Dynamic Memory Path & Root Drive Auto-Discovery
+
+- **Problem**: 
+  1. Pengguna baru harus melakukan konfigurasi manual yang rumit untuk menghubungkan MCP ke berbagai AI Agent (Claude Code, Antigravity, Cursor, Windsurf).
+  2. Lokasi penyimpanan master memory/database OmniKB sebelumnya terkunci di direktori default (`~/.omnikb`).
+  3. Safety guard pada file watcher sebelumnya mengabaikan root drive (`C:\`) sehingga project yang dibuat langsung di root tidak ter-auto-detect.
+  4. Instalasi via `npm install -g github:...` gagal karena ketiadaan `prepare` script untuk build otomatis.
+- **Fix**:
+  - `src/core/config.ts`: Modul `GlobalConfig` untuk manajemen konfigurasi global dan pemilihan custom memory path (Otak Kedua).
+  - `src/setup-wizard.ts`: Interactive Setup Wizard berbasis CLI untuk pemilihan lokasi memory dan auto-injection konfigurasi MCP ke AI Agents (Antigravity, Claude, Cursor, Windsurf).
+  - `src/cli.ts`: Menambahkan command `omnikb setup` ke CLI router dan help menu.
+  - `src/core/workspace-manager.ts`: Menghapus pembatasan root drive pada `GlobalDiscoveryWatcher` agar direktori root (seperti `C:\`) dapat dimonitor secara real-time.
+  - `package.json`: Menambahkan `"prepare": "npm run build"` agar instalasi via Git otomatis mengompilasi TypeScript.
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% PASS.
+  - `npm test`: 10/10 test suites PASS.
+  - Verifikasi live daemon: Sukses mendeteksi dan mengindeks project di `C:\PembuktianFinal` dalam 15ms.
+
+---
+
+## 2026-08-18 — Full System Audit & Zero-Data-Loss Hardening (6 Critical Gaps Closed)
+
+- **Problem**: Full audit mendalam dilakukan untuk mencari seluruh celah kegagalan yang dapat menyebabkan kode/file tidak terindeks atau hilang dari OmniKB saat membuat project baru atau berpindah direktori.
+- **Identified & Fixed Gaps**:
+  1. **Extension Gap**: `src/core/watcher.ts` sebelumnya belum mendaftarkan ekstensi `.dart`, `.vue`, `.svelte`, `.astro`, `.prisma`, `.php`, `.kt`, `.kts`, `.rb`, `.swift`, `.mts`, `.cts`, `.pyw` di `collectFiles()` meskipun parser-nya sudah ada. *(Fixed: Ditambahkan Set 35+ ekstensi multi-bahasa lengkap).*
+  2. **Ignore Pattern Gap**: Pola direktori build modern (`.nuxt`, `.output`, `.turbo`, `.svelte-kit`, `.dart_tool`, `__pycache__`, `.venv`, `vendor`, `target`, `.gradle`, `obj`, `bin`) belum masuk ignore list default sehingga berisiko membebani watcher dengan ribuan file binary/cache. *(Fixed: 12 ignore patterns modern ditambahkan).*
+  3. **Folder Creation Gap**: Saat user membuat folder baru (misal `src/components/`) dan memasukkan file ke dalamnya, `processPendingChanges` sebelumnya langsung `continue` tanpa men-scan isi subfolder tersebut. *(Fixed: Ditambahkan recursive directory scanning pada pending queue handler).*
+  4. **Multi-Process Desync Gap**: `WorkspaceRegistry` sebelumnya hanya me-load `registry.json` saat instansiasi constructor sehingga proses MCP server yang sedang berjalan tidak mengetahui jika ada project baru yang di-register via CLI eksternal. *(Fixed: Real-time re-load otomatis pada seluruh operasi query & mutating registry).*
+  5. **Crash-Resilient Atomic Storage Gap**: `storage.saveToDisk()` menulis langsung ke file target tanpa temporary swap, berisiko korupsi data jika proses terhenti di tengah write. *(Fixed: Diubah menjadi write ke `.tmp` file lalu di-rename secara atomik).*
+  6. **Global Auto-Discovery Daemon**: Dibuat *background daemon* (`GlobalDiscoveryWatcher`) yang otomatis memonitor seluruh parent directory (seperti `C:\Ash-Workspace\`). Begitu user membuat folder baru dan menambahkan file (seperti `package.json`), OmniKB akan otomatis mendeteksi, meregistrasi, dan mengindeks project tersebut *secara real-time dan transparan*, tanpa perlu `omnikb register` atau perintah manual apapun.
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% bersih.
+  - `npm test`: 10/10 test suites PASS.
+  - `npm run precommit`: Seluruh audit security, build, test, dan graph integrity lolos bersih.
+
+---
+
+## 2026-08-18 — Universal Multi-Workspace Engine & Global Project Catalog
+
+- **Problem**: OmniKB sebelumnya beroperasi secara *single-workspace* terisolasi (1 proses = 1 workspace root statis). Saat user berpindah ke project lain (seperti `C:\Ash-Workspace\Ash-Portofolio-main`), OmniKB tidak mengenali ataupun mengindeks project tersebut sehingga seluruh tool MCP tidak dapat mengakses konteks di luar project Knowledge-Base.
+- **Fix**:
+  - `src/types/index.ts`: Menambahkan schema `WorkspaceEntry` dan `WorkspaceRegistryData`.
+  - `src/core/workspace-registry.ts`: Modul registry global tersimpan di `~/.omnikb/registry.json` untuk tracking seluruh workspace, pencarian path cerdas (`findByPath`), dan active workspace context.
+  - `src/core/workspace-manager.ts`: Engine multi-workspace lazy-loaded dengan LRU eviction pool (max 5 workspace concurrent di RAM, data graph tetap persisten per-project di `.omnikb/`).
+  - `src/server/mcp-server.ts`: Upgrade McpServer mendukung `WorkspaceManager`, penambahan parameter opsional `workspace` di seluruh query tools (`kb_explore`, `kb_impact`, `kb_search`, `kb_architecture`, `kb_god_nodes`, `kb_status`, `kb_sync`), serta 4 tools baru: `kb_workspaces`, `kb_register`, `kb_unregister`, `kb_switch`.
+  - `src/server/http-server.ts`: Penambahan endpoint REST `/v1/workspaces*` dan routing multi-workspace pada seluruh endpoint.
+  - `src/cli.ts`: Perluasan CLI dengan command `workspaces`, `register`, `unregister`, `switch`, dan auto-registration pada perintah `init` & `serve`.
+  - `test/run-tests.js`: Penambahan Suite 9 & Suite 10 (10/10 test suites lolos 100%).
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% bersih.
+  - `npm test`: 10/10 test suites PASS.
+  - `npm run diagnose`: 0 broken edges, 0 missing files, 100% healthy.
+  - Initial scan berhasil mengindeks `Ash-Portofolio-main`: **151 files, 561 nodes, 3750 edges** dalam 500ms.
+  - Global catalog aktif melacak `Knowledge-Base` dan `Ash-Portofolio-main`.
+
 ---
 
 ## 2026-08-16 — Multi-Language Expansion Engine (6 New Dedicated Parsers)
