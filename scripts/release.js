@@ -130,19 +130,22 @@ try {
 
   const ghCmd = getGhCommand();
   if (ghCmd) {
-    console.log('6. Creating official GitHub Release via GitHub CLI (gh)...');
+    console.log('6. Packaging tarball and creating official GitHub Release...');
     const releaseTitle = `v${newVersion} — ${deskripsiKategori}`;
     const notesFile = path.join(rootDir, '.release-notes.tmp');
     fs.writeFileSync(notesFile, changelogEntry.trim(), 'utf8');
 
+    const tgzName = `omnikb-${newVersion}.tgz`;
     try {
-      execSync(`${ghCmd} release create "v${newVersion}" --title "${releaseTitle}" --notes-file "${notesFile}"`, {
+      execSync('npm pack', { cwd: rootDir, stdio: 'inherit' });
+      execSync(`${ghCmd} release create "v${newVersion}" "${tgzName}" --title "${releaseTitle}" --notes-file "${notesFile}"`, {
         cwd: rootDir,
         stdio: 'inherit',
       });
-      console.log(`   ✅ GitHub Release v${newVersion} published successfully!`);
+      console.log(`   ✅ GitHub Release v${newVersion} published with ${tgzName}!`);
     } finally {
       if (fs.existsSync(notesFile)) fs.unlinkSync(notesFile);
+      if (fs.existsSync(path.join(rootDir, tgzName))) fs.unlinkSync(path.join(rootDir, tgzName));
     }
   } else {
     console.log('ℹ️  GitHub CLI (gh) not found in PATH. Push completed, create release manually if desired.');
