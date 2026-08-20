@@ -776,7 +776,94 @@ class User extends Model {
 
     console.log('   ✅ Automated Blast Radius CI/CD Scanner & scripts/impact-check.js passed.');
 
-    console.log('\n🎉 ALL 11 TEST SUITES PASSED SUCCESSFULLY! 100% Zero-Bug, CI/CD Gate Verified.\n');
+    // 12. Testing 100% Universal Automation (Multi-Workspace Auto-Watch, Background Self-Healing Heartbeat, Auto-Prune)
+    console.log('12. Testing 100% Universal Automation (Multi-Workspace Auto-Watch, Self-Healing Heartbeat, Pruning)...');
+    const uniSandbox = path.join(testWorkspace, 'uni-automation');
+    const wsA = path.join(uniSandbox, 'project-alpha');
+    const wsB = path.join(uniSandbox, 'project-beta');
+    fs.mkdirSync(path.join(wsA, 'src'), { recursive: true });
+    fs.mkdirSync(path.join(wsB, 'src'), { recursive: true });
+
+    fs.writeFileSync(path.join(wsA, 'package.json'), JSON.stringify({ name: 'project-alpha' }));
+    fs.writeFileSync(path.join(wsB, 'package.json'), JSON.stringify({ name: 'project-beta' }));
+
+    fs.writeFileSync(path.join(wsA, 'src', 'auth.ts'), 'export function authenticate() { return true; }');
+    fs.writeFileSync(path.join(wsB, 'src', 'billing.ts'), 'export function chargeCard() { return "paid"; }');
+
+    const uniRegistryDir = path.join(uniSandbox, 'registry');
+    const uniRegistry = new WorkspaceRegistry(uniRegistryDir);
+    uniRegistry.register(wsA, 'Alpha');
+    uniRegistry.register(wsB, 'Beta');
+
+    const uniManager = new WorkspaceManager(uniRegistry, 10);
+    const loadedAll = await uniManager.startUniversalWatch(true);
+    assert.strictEqual(loadedAll.length, 2, 'Universal watch must load both registered workspaces');
+
+    const instA = await uniManager.getOrLoad('Alpha');
+    const instB = await uniManager.getOrLoad('Beta');
+
+    assert.ok(instA.storage.nodes.has('src/auth.ts#authenticate'));
+    assert.ok(instB.storage.nodes.has('src/billing.ts#chargeCard'));
+
+    // Test Concurrent Multi-Workspace Auto-Sync
+    fs.writeFileSync(
+      path.join(wsA, 'src', 'auth.ts'),
+      'export function authenticate() { return true; }\nexport function logout() { return false; }'
+    );
+    fs.writeFileSync(
+      path.join(wsB, 'src', 'billing.ts'),
+      'export function chargeCard() { return "paid"; }\nexport function refundCard() { return "refunded"; }'
+    );
+
+    // Give debounced watchers time to trigger
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    assert.ok(instA.storage.nodes.has('src/auth.ts#logout'), 'Workspace Alpha must auto-sync new logout function');
+    assert.ok(instB.storage.nodes.has('src/billing.ts#refundCard'), 'Workspace Beta must auto-sync new refundCard function');
+
+    // Test Background Self-Healing Freshness Heartbeat
+    fs.writeFileSync(
+      path.join(wsA, 'src', 'secret.ts'),
+      'export function getSecretKey() { return "12345"; }'
+    );
+    const healed = await instA.watcher.checkFreshnessAndAutoHeal();
+    assert.strictEqual(healed, true, 'Heartbeat must detect new file and reconcile workspace');
+    assert.ok(instA.storage.nodes.has('src/secret.ts#getSecretKey'));
+
+    // Test Dead Path Auto-Pruning
+    const deadPath = path.join(uniSandbox, 'deleted-project');
+    uniRegistry.register(deadPath, 'DeadProj');
+    assert.strictEqual(uniRegistry.list().some((w) => w.name === 'DeadProj'), true);
+    const pruned = uniRegistry.pruneNonExistent();
+    assert.ok(pruned.includes('DeadProj'));
+    assert.strictEqual(uniRegistry.list().some((w) => w.name === 'DeadProj'), false);
+
+    // Test MCP Server Tools in Universal Mode (kb_status & kb_sync with workspace: 'all')
+    const uniMcp = new McpServer(uniManager);
+    const uniStatusRes = await uniMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 100,
+      method: 'tools/call',
+      params: { name: 'kb_status', arguments: { workspace: 'all' } },
+    });
+    const parsedStatus = JSON.parse(uniStatusRes.result.content[0].text);
+    assert.strictEqual(parsedStatus.universalWatchActive, true);
+    assert.strictEqual(parsedStatus.totalWatchedWorkspaces, 2);
+
+    const uniSyncRes = await uniMcp.handleRequest({
+      jsonrpc: '2.0',
+      id: 101,
+      method: 'tools/call',
+      params: { name: 'kb_sync', arguments: { workspace: 'all' } },
+    });
+    const parsedSync = JSON.parse(uniSyncRes.result.content[0].text);
+    assert.strictEqual(parsedSync.success, true);
+    assert.strictEqual(parsedSync.workspaces.length, 2);
+
+    uniManager.dispose();
+    console.log('   ✅ 100% Universal Automation (Multi-Workspace Auto-Watch, Self-Healing, Pruning) passed.');
+
+    console.log('\n🎉 ALL 12 TEST SUITES PASSED SUCCESSFULLY! 100% Zero-Bug, CI/CD Gate Verified.\n');
   } finally {
     if (fs.existsSync(testWorkspace)) {
       fs.rmSync(testWorkspace, { recursive: true, force: true });

@@ -129,6 +129,7 @@ export interface SearchResult {
 export interface WatcherConfig {
   rootPath: string;
   debounceMs?: number;
+  heartbeatMs?: number; // Background periodic self-healing freshness heartbeat interval in ms (default: 60000ms, 0 = disabled)
   ignorePatterns?: string[];
   autoGenerateReport?: boolean;
   autoGenerateVisual?: boolean;

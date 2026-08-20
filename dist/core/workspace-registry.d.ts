@@ -21,6 +21,11 @@ export declare class WorkspaceRegistry {
         totalFiles?: number;
     }): void;
     /**
+     * Prunes workspace entries whose root directories no longer exist on disk.
+     * Returns list of pruned workspace identifiers.
+     */
+    pruneNonExistent(): string[];
+    /**
      * Discovers the project root directory from any file path by looking for project root markers
      */
     static detectProjectRoot(startPath: string): string | null;

@@ -1275,11 +1275,23 @@ class KnowledgeReporter {
             fs.mkdirSync(targetDir, { recursive: true });
         }
         const stats = this.graph.getStats();
-        const nodes = Array.from(this.storage.nodes.values());
-        const edges = Array.from(this.storage.edges.values());
+        const visualNodes = Array.from(this.storage.nodes.values()).slice(0, 5000).map((n) => ({
+            id: n.id,
+            name: n.name,
+            kind: n.kind,
+            filePath: n.filePath,
+            startLine: n.startLine,
+            endLine: n.endLine,
+        }));
+        const visualEdges = Array.from(this.storage.edges.values()).slice(0, 15000).map((e) => ({
+            id: e.id,
+            sourceId: e.sourceId,
+            targetId: e.targetId,
+            kind: e.kind,
+        }));
         const embeddedData = {
-            nodes,
-            edges,
+            nodes: visualNodes,
+            edges: visualEdges,
             godNodes: stats.godNodes,
             stats: {
                 totalNodes: stats.totalNodes,

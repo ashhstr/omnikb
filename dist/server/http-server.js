@@ -290,6 +290,15 @@ class LocalHttpServer {
                     if (pathname === '/v1/sync' && (req.method === 'GET' || req.method === 'POST')) {
                         const body = req.method === 'POST' ? await this.readBodyJson(req) : {};
                         const wsParam = body.workspace || query.workspace;
+                        if (wsParam === 'all') {
+                            const results = await this.manager.reconcileAll();
+                            this.sendJson(res, 200, {
+                                success: true,
+                                message: `Universal sync: successfully reconciled ${results.length} workspace(s)`,
+                                workspaces: results,
+                            });
+                            return;
+                        }
                         const inst = await this.resolveInstance(wsParam);
                         const stats = await inst.watcher.forceReconcile();
                         this.sendJson(res, 200, {

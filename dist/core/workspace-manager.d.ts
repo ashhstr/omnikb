@@ -23,6 +23,18 @@ export declare class WorkspaceManager {
     getRegistry(): WorkspaceRegistry;
     getLoadedInstances(): WorkspaceInstance[];
     /**
+     * Starts universal real-time watchers for ALL valid registered workspaces.
+     * Automatically prunes non-existent paths and keeps all workspaces in 100% sync.
+     */
+    startUniversalWatch(autoScan?: boolean): Promise<WorkspaceInstance[]>;
+    /**
+     * Triggers atomic full reconciliation across all loaded workspaces concurrently.
+     */
+    reconcileAll(): Promise<Array<{
+        workspace: string;
+        stats: any;
+    }>>;
+    /**
      * Resolves a workspace instance by identifier or falls back to active/cwd
      */
     resolveInstance(workspaceIdOrPath?: string): Promise<WorkspaceInstance>;

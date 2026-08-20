@@ -111,6 +111,7 @@ export interface SearchResult {
 export interface WatcherConfig {
     rootPath: string;
     debounceMs?: number;
+    heartbeatMs?: number;
     ignorePatterns?: string[];
     autoGenerateReport?: boolean;
     autoGenerateVisual?: boolean;

@@ -113,7 +113,7 @@ class KnowledgeStorage {
             nodes: Array.from(this.nodes.values()),
             edges: Array.from(this.edges.values()),
         };
-        const jsonStr = JSON.stringify(dump, null, 2);
+        const jsonStr = JSON.stringify(dump);
         const tmpFilePath = `${this.dbFilePath}.${Date.now()}.tmp`;
         try {
             await fs.promises.writeFile(tmpFilePath, jsonStr, 'utf8');

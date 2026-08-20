@@ -25,7 +25,7 @@ export class WorkspaceManager {
   private parser: CodeParser;
   private discoveryWatcher: GlobalDiscoveryWatcher;
 
-  constructor(registry?: WorkspaceRegistry, maxLoadedWorkspaces: number = 5) {
+  constructor(registry?: WorkspaceRegistry, maxLoadedWorkspaces: number = 20) {
     this.registry = registry || new WorkspaceRegistry();
     this.maxLoadedWorkspaces = Math.max(1, maxLoadedWorkspaces);
     this.parser = new CodeParser();
@@ -40,6 +40,43 @@ export class WorkspaceManager {
 
   public getLoadedInstances(): WorkspaceInstance[] {
     return Array.from(this.instances.values());
+  }
+
+  /**
+   * Starts universal real-time watchers for ALL valid registered workspaces.
+   * Automatically prunes non-existent paths and keeps all workspaces in 100% sync.
+   */
+  public async startUniversalWatch(autoScan: boolean = false): Promise<WorkspaceInstance[]> {
+    this.registry.pruneNonExistent();
+    const workspaces = this.registry.list();
+    const loaded: WorkspaceInstance[] = [];
+
+    for (const ws of workspaces) {
+      try {
+        if (!fs.existsSync(ws.rootPath)) continue;
+        const inst = await this.getOrLoad(ws.id, autoScan);
+        loaded.push(inst);
+      } catch (err: any) {
+        console.warn(`[OmniKB Universal Watcher] Could not load workspace '${ws.name}': ${err?.message || err}`);
+      }
+    }
+
+    console.log(`[OmniKB Universal Watcher] Active monitoring across ${loaded.length} workspace(s) simultaneously.`);
+    return loaded;
+  }
+
+  /**
+   * Triggers atomic full reconciliation across all loaded workspaces concurrently.
+   */
+  public async reconcileAll(): Promise<Array<{ workspace: string; stats: any }>> {
+    const instances = Array.from(this.instances.values());
+    const results = await Promise.all(
+      instances.map(async (inst) => {
+        const stats = await inst.watcher.forceReconcile();
+        return { workspace: inst.entry.rootPath, stats };
+      })
+    );
+    return results;
   }
 
   /**

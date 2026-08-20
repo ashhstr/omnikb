@@ -86,9 +86,21 @@ class WorkspaceRegistry {
                 fs.mkdirSync(this.registryDir, { recursive: true });
             }
             const jsonStr = JSON.stringify(this.data, null, 2);
-            const tmpPath = `${this.registryFilePath}.${Date.now()}.tmp`;
-            fs.writeFileSync(tmpPath, jsonStr, 'utf8');
-            fs.renameSync(tmpPath, this.registryFilePath);
+            try {
+                const tmpPath = `${this.registryFilePath}.${Date.now()}.${Math.random().toString(36).slice(2, 6)}.tmp`;
+                fs.writeFileSync(tmpPath, jsonStr, 'utf8');
+                try {
+                    if (fs.existsSync(this.registryFilePath)) {
+                        fs.unlinkSync(this.registryFilePath);
+                    }
+                }
+                catch { }
+                fs.renameSync(tmpPath, this.registryFilePath);
+            }
+            catch {
+                // Safe direct fallback on Windows file-lock contention
+                fs.writeFileSync(this.registryFilePath, jsonStr, 'utf8');
+            }
         }
         catch (err) {
             console.error(`[OmniKB Registry] Failed to save registry: ${err?.message || err}`);
@@ -231,6 +243,32 @@ class WorkspaceRegistry {
             entry.lastAccessed = Date.now();
             this.save();
         }
+    }
+    /**
+     * Prunes workspace entries whose root directories no longer exist on disk.
+     * Returns list of pruned workspace identifiers.
+     */
+    pruneNonExistent() {
+        this.load();
+        const removed = [];
+        const kept = [];
+        for (const ws of this.data.workspaces) {
+            if (fs.existsSync(ws.rootPath)) {
+                kept.push(ws);
+            }
+            else {
+                removed.push(ws.name || ws.id);
+            }
+        }
+        if (removed.length > 0) {
+            this.data.workspaces = kept;
+            if (this.data.activeWorkspaceId && !kept.some((w) => w.id === this.data.activeWorkspaceId)) {
+                this.data.activeWorkspaceId = kept.length > 0 ? kept[0].id : null;
+            }
+            this.save();
+            console.log(`[OmniKB Registry] Auto-pruned ${removed.length} non-existent workspace(s): ${removed.join(', ')}`);
+        }
+        return removed;
     }
     /**
      * Discovers the project root directory from any file path by looking for project root markers

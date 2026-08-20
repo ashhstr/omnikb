@@ -11,6 +11,7 @@ export declare class WorkspaceWatcher {
     private reporter;
     private isRunning;
     private debounceTimer;
+    private heartbeatTimer;
     private pendingFiles;
     private fsWatchers;
     constructor(config: WatcherConfig, parser: CodeParser, storage: KnowledgeStorage, graph: GraphEngine, reporter: KnowledgeReporter);
@@ -22,6 +23,11 @@ export declare class WorkspaceWatcher {
      * Starts real-time file watcher with debounced auto-sync
      */
     startWatching(): void;
+    /**
+     * Performs a non-blocking background freshness check and triggers auto-reconciliation
+     * if disk files are out-of-sync with in-memory graph state.
+     */
+    checkFreshnessAndAutoHeal(): Promise<boolean>;
     /**
      * Performs an immediate atomic reconciliation of all files in the workspace,
      * detecting any out-of-sync files, mass deletions, or branch changes.

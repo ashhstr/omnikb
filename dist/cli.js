@@ -151,12 +151,53 @@ async function main() {
         }
         case 'watch': {
             printBanner();
-            const instance = await manager.registerAndLoad(workspaceRoot, undefined, false);
-            await instance.watcher.initialScan();
-            instance.watcher.startWatching();
+            const watchAll = args.includes('--all') || args.includes('-a');
+            if (watchAll) {
+                console.log(`[OmniKB] Starting Universal Multi-Workspace Watcher across all registered projects...`);
+                const allWatched = await manager.startUniversalWatch(false);
+                console.log(`[OmniKB] Real-time active auto-sync watching ${allWatched.length} workspace(s) simultaneously.`);
+            }
+            else {
+                const instance = await manager.registerAndLoad(workspaceRoot, undefined, false);
+                await instance.watcher.initialScan();
+                instance.watcher.startWatching();
+                console.log(`[OmniKB] Monitoring '${instance.entry.name}' (${instance.entry.rootPath}).`);
+            }
             console.log(`[OmniKB] Press Ctrl+C to stop watcher.`);
             // Keep process alive
             setInterval(() => { }, 1000 * 60);
+            break;
+        }
+        case 'sync': {
+            printBanner();
+            const syncAll = args.includes('--all') || args.includes('-a');
+            if (syncAll) {
+                console.log(`[OmniKB] Reconciling all registered workspaces...`);
+                const results = await manager.reconcileAll();
+                console.log(`\n✅ Successfully reconciled ${results.length} workspace(s):`);
+                for (const r of results) {
+                    console.log(`   - ${path.basename(r.workspace)}: ${r.stats.totalFiles} files, ${r.stats.totalNodes} nodes, ${r.stats.totalEdges} edges`);
+                }
+            }
+            else {
+                const instance = await manager.resolveInstance(workspaceRoot);
+                const stats = await instance.watcher.forceReconcile();
+                console.log(`\n✅ Reconciled '${instance.entry.name}': ${stats.totalFiles} files, ${stats.totalNodes} nodes, ${stats.totalEdges} edges`);
+            }
+            manager.dispose();
+            break;
+        }
+        case 'prune': {
+            printBanner();
+            console.log(`[OmniKB] Pruning dead workspace paths from registry...`);
+            const pruned = registry.pruneNonExistent();
+            if (pruned.length > 0) {
+                console.log(`\n✅ Pruned ${pruned.length} non-existent workspace(s): ${pruned.join(', ')}`);
+            }
+            else {
+                console.log(`\nℹ️  Registry clean. All registered workspace paths exist on disk.`);
+            }
+            manager.dispose();
             break;
         }
         case 'serve': {
@@ -170,6 +211,8 @@ async function main() {
             // Auto-register and load target workspace
             const instance = await manager.registerAndLoad(workspaceRoot, undefined, false);
             await instance.watcher.initialScan();
+            // Automatically launch Universal Multi-Workspace Watcher across all registered repositories
+            const allWatched = await manager.startUniversalWatch(false);
             // Start HTTP REST API server
             const httpServer = new http_server_1.LocalHttpServer(port, manager);
             await httpServer.start();
@@ -180,11 +223,12 @@ async function main() {
             }
             else {
                 printBanner();
-                console.log(`[OmniKB] Real-time multi-workspace engine active.`);
-                console.log(`- Active Workspace: ${instance.entry.name} (${instance.entry.rootPath})`);
-                console.log(`- REST API: http://127.0.0.1:${port}`);
-                console.log(`- Visualizer: http://127.0.0.1:${port}/visual`);
-                console.log(`- Live Doc: ${path.join(workspaceRoot, 'KNOWLEDGE_BASE.md')}`);
+                console.log(`[OmniKB] Universal Multi-Workspace Real-Time Engine active.`);
+                console.log(`- Active Workspace   : ${instance.entry.name} (${instance.entry.rootPath})`);
+                console.log(`- Watched Workspaces : ${allWatched.length} project(s) monitored simultaneously`);
+                console.log(`- REST API           : http://127.0.0.1:${port}`);
+                console.log(`- Visualizer         : http://127.0.0.1:${port}/visual`);
+                console.log(`- Live Doc           : ${path.join(workspaceRoot, 'KNOWLEDGE_BASE.md')}`);
                 console.log(`\nPress Ctrl+C to exit.`);
                 setInterval(() => { }, 1000 * 60);
             }
@@ -365,11 +409,13 @@ async function main() {
             console.log(`  workspaces                 List all registered workspaces and active status`);
             console.log(`  register [path] [name]     Register and index a workspace in the global catalog`);
             console.log(`  unregister <target>        Remove workspace from global catalog`);
-            console.log(`  switch <target>            Switch active workspace context\n`);
+            console.log(`  switch <target>            Switch active workspace context`);
+            console.log(`  prune                      Auto-clean deleted/non-existent workspaces from registry\n`);
             console.log(`Graph & Service Commands:`);
             console.log(`  init [--workspace <path>]  Scan workspace, build graph, and create initial docs`);
-            console.log(`  watch [--workspace <path>] Run continuous background watcher with auto-sync`);
-            console.log(`  serve [--port] [--mcp]     Run real-time multi-workspace server + MCP stdio`);
+            console.log(`  watch [--all] [-w <path>]  Run continuous background watcher (use --all for all workspaces)`);
+            console.log(`  sync [--all] [-w <path>]   Trigger atomic graph reconciliation (use --all for all workspaces)`);
+            console.log(`  serve [--port] [--mcp]     Run universal multi-workspace server + MCP stdio (100% auto-sync)`);
             console.log(`  explore <symbol>           Explore symbol context, callers, callees, and code`);
             console.log(`  impact <symbol>            Calculate blast radius and affected files`);
             console.log(`  audit-impact <target>      Audit blast radius in CI/CD pipeline against max allowed risk`);

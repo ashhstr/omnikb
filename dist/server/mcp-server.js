@@ -102,7 +102,11 @@ class McpServer {
                 process.stdout.write(JSON.stringify(errRes) + '\n');
             }
         });
-        console.error('[OmniKB MCP] Universal Multi-Workspace Stdio server initialized.');
+        // Automatically trigger universal auto-watch across all registered workspaces in background
+        this.manager.startUniversalWatch(false).catch((err) => {
+            console.error(`[OmniKB MCP] Universal watch background start: ${err?.message || err}`);
+        });
+        console.error('[OmniKB MCP] Universal Multi-Workspace Stdio server initialized & 100% auto-sync active.');
     }
     async handleRequest(req) {
         const { method, params, id } = req;
@@ -373,6 +377,31 @@ All tools support an optional 'workspace' parameter to query any registered proj
                             activeWorkspace: instance.entry,
                         }, null, 2);
                     }
+                    else if (toolName === 'kb_status' && args.workspace === 'all') {
+                        const loaded = this.manager.getLoadedInstances();
+                        const list = this.manager.getRegistry().list();
+                        outputText = JSON.stringify({
+                            universalWatchActive: true,
+                            totalRegisteredWorkspaces: list.length,
+                            totalWatchedWorkspaces: loaded.length,
+                            activeWorkspace: this.manager.getRegistry().getActive(),
+                            workspaces: loaded.map((i) => ({
+                                id: i.entry.id,
+                                name: i.entry.name,
+                                rootPath: i.entry.rootPath,
+                                stats: i.graph.getStats(),
+                                pendingQueue: i.watcher.getPendingQueue(),
+                            })),
+                        }, null, 2);
+                    }
+                    else if (toolName === 'kb_sync' && args.workspace === 'all') {
+                        const results = await this.manager.reconcileAll();
+                        outputText = JSON.stringify({
+                            success: true,
+                            message: `Universal sync: successfully reconciled ${results.length} workspace(s)`,
+                            workspaces: results,
+                        }, null, 2);
+                    }
                     else {
                         // 2. Query / Inspection Tools (workspace-aware)
                         const inst = await this.resolveInstance(args.workspace);
@@ -400,7 +429,15 @@ All tools support an optional 'workspace' parameter to query any registered proj
                         else if (toolName === 'kb_status') {
                             const stats = inst.graph.getStats();
                             const pending = inst.watcher.getPendingQueue();
-                            outputText = JSON.stringify({ workspaceRoot: inst.workspaceRoot, stats, pendingQueue: pending }, null, 2);
+                            const loaded = this.manager.getLoadedInstances();
+                            outputText = JSON.stringify({
+                                workspaceRoot: inst.workspaceRoot,
+                                name: inst.name,
+                                stats,
+                                pendingQueue: pending,
+                                universalWatchActive: true,
+                                totalWatchedWorkspaces: loaded.length,
+                            }, null, 2);
                         }
                         else if (toolName === 'kb_sync') {
                             const stats = await inst.watcher.forceReconcile();

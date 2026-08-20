@@ -45,11 +45,13 @@ class WorkspaceWatcher {
     reporter;
     isRunning = false;
     debounceTimer = null;
+    heartbeatTimer = null;
     pendingFiles = new Set();
     fsWatchers = [];
     constructor(config, parser, storage, graph, reporter) {
         this.config = {
             debounceMs: 500,
+            heartbeatMs: 60000,
             autoGenerateReport: true,
             autoGenerateVisual: true,
             ignorePatterns: [
@@ -78,6 +80,18 @@ class WorkspaceWatcher {
                 '*.tmp',
                 '*.log',
                 'KNOWLEDGE_BASE.md',
+                'package-lock.json',
+                'pnpm-lock.yaml',
+                'yarn.lock',
+                'composer.lock',
+                'Cargo.lock',
+                'Gemfile.lock',
+                'poetry.lock',
+                '*.lock',
+                '*.min.js',
+                '*.min.css',
+                '*.bundle.js',
+                '*.map',
             ],
             ...config,
         };
@@ -183,6 +197,64 @@ class WorkspaceWatcher {
             console.warn(`[OmniKB Watcher] Native recursive watch warning: ${err?.message}. Falling back to directory walk.`);
             this.watchDirectoriesRecursively(this.config.rootPath);
         }
+        // Attach periodic background self-healing freshness heartbeat
+        if (this.config.heartbeatMs && this.config.heartbeatMs > 0) {
+            this.heartbeatTimer = setInterval(() => {
+                this.checkFreshnessAndAutoHeal().catch((err) => {
+                    console.warn(`[OmniKB Self-Healing Heartbeat] Background check warning: ${err?.message || err}`);
+                });
+            }, this.config.heartbeatMs);
+            this.heartbeatTimer.unref();
+        }
+    }
+    /**
+     * Performs a non-blocking background freshness check and triggers auto-reconciliation
+     * if disk files are out-of-sync with in-memory graph state.
+     */
+    async checkFreshnessAndAutoHeal() {
+        if (!fs.existsSync(this.config.rootPath))
+            return false;
+        const diskFiles = this.collectFiles(this.config.rootPath);
+        const diskRelPathSet = new Set();
+        let isOutOfSync = false;
+        for (const fullPath of diskFiles) {
+            const relPath = path.relative(this.config.rootPath, fullPath).replace(/\\/g, '/');
+            diskRelPathSet.add(relPath);
+            const existing = this.storage.files.get(relPath);
+            if (!existing) {
+                isOutOfSync = true;
+                break;
+            }
+            try {
+                const stats = fs.statSync(fullPath);
+                if (Math.abs(stats.mtimeMs - existing.lastModified) > 500) {
+                    const content = fs.readFileSync(fullPath, 'utf8');
+                    const hash = parser_1.CodeParser.computeHash(content);
+                    if (existing.hash !== hash) {
+                        isOutOfSync = true;
+                        break;
+                    }
+                }
+            }
+            catch {
+                isOutOfSync = true;
+                break;
+            }
+        }
+        if (!isOutOfSync) {
+            for (const storedRelPath of Array.from(this.storage.files.keys())) {
+                if (!diskRelPathSet.has(storedRelPath)) {
+                    isOutOfSync = true;
+                    break;
+                }
+            }
+        }
+        if (isOutOfSync) {
+            console.log(`[OmniKB Self-Healing Heartbeat] Detected out-of-sync state in '${path.basename(this.config.rootPath)}', auto-reconciling...`);
+            await this.forceReconcile();
+            return true;
+        }
+        return false;
     }
     /**
      * Performs an immediate atomic reconciliation of all files in the workspace,
@@ -257,6 +329,10 @@ class WorkspaceWatcher {
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
             this.debounceTimer = null;
+        }
+        if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
         }
         for (const watcher of this.fsWatchers) {
             try {
@@ -390,7 +466,13 @@ class WorkspaceWatcher {
             else if (entry.isFile()) {
                 const ext = path.extname(entry.name).toLowerCase();
                 if (supportedExts.has(ext)) {
-                    results.push(fullPath);
+                    try {
+                        const stats = fs.statSync(fullPath);
+                        if (stats.size <= 1024 * 1024) {
+                            results.push(fullPath);
+                        }
+                    }
+                    catch { }
                 }
             }
         }
@@ -439,7 +521,15 @@ class WorkspaceWatcher {
             }
         }
         for (const part of parts) {
-            if (part.startsWith('.') && (part === '.omnikb' || part === '.git' || part === '.vscode' || part === '.idea' || part === '.cache')) {
+            if (part.startsWith('.') &&
+                (part === '.omnikb' ||
+                    part === '.git' ||
+                    part === '.vscode' ||
+                    part === '.idea' ||
+                    part === '.cache' ||
+                    part === '.claude-plugin' ||
+                    part === '.github' ||
+                    part === '.husky')) {
                 return true;
             }
         }

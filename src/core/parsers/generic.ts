@@ -52,11 +52,18 @@ export class MarkdownParser implements ILanguageParser {
 
         const codeRefRegex = /`([A-Za-z0-9_$.]+(?:\(\))?)`/g;
         let refMatch: RegExpExecArray | null;
-        const sectionText = lines.slice(i, endLine).join('\n');
+        const sectionText = lines.slice(i, Math.min(i + 150, endLine)).join('\n');
+        const seenRefs = new Set<string>();
 
         while ((refMatch = codeRefRegex.exec(sectionText)) !== null) {
+          if (seenRefs.size >= 25) break;
           const rawSymbol = refMatch[1].replace('()', '');
-          if (rawSymbol.length > 2 && !/^(true|false|null|undefined|string|number|boolean)$/.test(rawSymbol)) {
+          if (
+            rawSymbol.length > 2 &&
+            !seenRefs.has(rawSymbol) &&
+            !/^(true|false|null|undefined|string|number|boolean|any|void|const|let|var)$/.test(rawSymbol)
+          ) {
+            seenRefs.add(rawSymbol);
             edges.push({
               id: `edge:documents:${sectionId}:${rawSymbol}`,
               sourceId: sectionId,

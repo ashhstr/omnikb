@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-20T00:19:55.217Z | **Indexed Files**: 112 | **Total Symbols**: 571 | **Call & Dependency Edges**: 3174
+> **Auto-Updated**: 2026-08-20T05:41:23.827Z | **Indexed Files**: 108 | **Total Symbols**: 571 | **Call & Dependency Edges**: 3021
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `112` |
-| **Functions & Methods** | `138` |
+| **Source Files** | `108` |
+| **Functions & Methods** | `142` |
 | **Classes & Interfaces** | `56` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `markdown: 60`, `json: 8`, `javascript: 9`, `typescript: 32`, `unknown: 3` |
+| **Languages** | `markdown: 60`, `json: 7`, `javascript: 9`, `typescript: 32` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,14 +18,14 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls | PageRank |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.026` |
-| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0217` |
+| **`find`** | `src/core/workspace-registry.ts` | **32** | 22 | 10 | `0.0257` |
+| **`parse`** | `src/core/parsers/dart.ts` | **33** | 26 | 7 | `0.0221` |
+| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.017` |
 | **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0167` |
-| **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0164` |
-| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0138` |
-| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0132` |
-| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0129` |
-| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0103` |
+| **`load`** | `src/core/workspace-registry.ts` | **15** | 9 | 6 | `0.0146` |
+| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0133` |
+| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0128` |
+| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0102` |
 
 ## 3. Web & API Route Registry
 
@@ -48,18 +48,15 @@ The most referenced and interconnected symbols in this repository:
 - **`.agents/challenger_2/DISPATCH.md`**: `3 symbols`
 - *(and 37 more files)*
 
-### `/root` (12 files)
+### `/root` (8 files)
 - **`AGENTS.md`**: `1 symbols`
 - **`CHANGELOG.md`**: `1 symbols`
 - **`CONTRIBUTING.md`**: `1 symbols`
 - **`ORIGINAL_REQUEST.md`**: `9 symbols`
-- **`package-lock.json`**: `1 symbols`
+- **`package.json`**: `1 symbols`
 - **`README.md`**: `1 symbols`
 - **`SECURITY.md`**: `1 symbols`
 - **`tsconfig.json`**: `1 symbols`
-- **`.gitignore`**: `1 symbols`
-- **`package.json`**: `1 symbols`
-- *(and 2 more files)*
 
 ### `/docs` (6 files)
 - **`docs/omnikb-4-pillars-synthesis-report.md`**: `1 symbols`
@@ -83,8 +80,8 @@ The most referenced and interconnected symbols in this repository:
 - **`scripts/impact-check.js`**: `1 symbols`
 - **`scripts/index-workspace.js`**: `2 symbols`
 - **`scripts/pre-commit.js`**: `1 symbols`
-- **`scripts/supervisor.js`**: `2 symbols`
 - **`scripts/release.js`**: `2 symbols`
+- **`scripts/supervisor.js`**: `2 symbols`
 
 ### `/src` (32 files)
 - **`src/cli.ts`**: `3 symbols`

@@ -2,6 +2,36 @@
 
 Riwayat kerja kronologis. Tambahkan entri baru di atas entri lama (format: `## YYYY-MM-DD — <judul>`). Jangan hapus entri lama tanpa alasan.
 
+## 2026-08-20 — 100% Universal Multi-Workspace Auto-Watch, Background Self-Healing Heartbeat & Auto-Prune Engine
+
+- **Problem**:
+  1. Watcher file (`WorkspaceWatcher`) sebelumnya hanya aktif pada 1 workspace yang aktif/dimuat ke memori. Perubahan kode pada workspace lain yang terdaftar di `registry.json` tidak tersinkronisasi secara real-time sampai ada query/switch manual.
+  2. Staleness risk: jika OS file event terputus atau file diubah oleh tool eksternal tanpa memicu `fs.watch`, workspace berpotensi mengalami desinkronisasi.
+  3. Ketiadaan mekanisme auto-pruning untuk workspace yang direktori root-nya sudah dihapus/dipindahkan dari disk.
+- **Fix**:
+  - `src/types/index.ts`: Menambahkan opsi `heartbeatMs` pada `WatcherConfig` untuk background self-healing freshness check.
+  - `src/core/watcher.ts`:
+    - Mengintegrasikan `heartbeatTimer` (default: 60s) dan metode `checkFreshnessAndAutoHeal()` untuk mendeteksi perubahan file di luar jangkauan OS watcher secara berkala dan menjalankan auto-reconcile seketika.
+    - Memperbaiki array `ignorePatterns` pada konstruktor `WorkspaceWatcher`.
+  - `src/core/workspace-registry.ts`: Mengimplementasikan `pruneNonExistent()` untuk membersihkan entri workspace non-aktif/terhapus dari katalog secara aman.
+  - `src/core/workspace-manager.ts`:
+    - Meningkatkan batas default loaded instances (`maxLoadedWorkspaces = 20`).
+    - Mengimplementasikan `startUniversalWatch()` untuk memuat dan mengaktifkan watcher di **seluruh** workspace terdaftar secara paralel pada saat startup.
+    - Mengimplementasikan `reconcileAll()` untuk sinkronisasi massal seluruh workspace secara konkuren.
+  - `src/server/mcp-server.ts` & `src/server/http-server.ts`:
+    - Otomatis menjalankan `startUniversalWatch()` saat server stdio/HTTP dimulai.
+    - Menambahkan dukungan `workspace: "all"` pada MCP tool `kb_status` dan `kb_sync` serta endpoint REST API `/v1/sync`.
+  - `src/cli.ts`:
+    - Menjadikan `omnikb serve` otomatis menjalankan Universal Multi-Workspace Auto-Watcher.
+    - Menambahkan flag `watch --all`, perintah `sync [--all]`, dan perintah `prune`.
+  - `test/run-tests.js`: Menambahkan Test Suite 12 untuk memverifikasi Universal Multi-Workspace Auto-Watch, concurrent incremental sync, self-healing heartbeat, dan pruning.
+- **Result**:
+  - `npm run build`: Kompilasi TypeScript 100% PASS (0 errors, exit code 0).
+  - `npm test`: 12/12 test suites PASS 100% tanpa defect.
+  - `npm run diagnose`: 571 unique nodes, 3.017 edges, 108 files, 0 broken edges, 0 missing files (100% Healthy).
+  - `npm run impact-check`: PASS 100% pada seluruh target perubahan.
+  - `npm run benchmark-tokens`: 82.81% Token Savings rate.
+
 ## 2026-08-18 — Inverted Index & Semantic Token Ranking Engine Upgrade
 
 - **Problem**: 
