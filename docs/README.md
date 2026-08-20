@@ -6,9 +6,11 @@ Semua file di folder ini otomatis ter-index oleh OmniKB (sebagai `doc_section`),
 
 | File | Isi |
 |---|---|
+| `installation-and-setup-guide.md` | Panduan lengkap instalasi, MCP wiring (Antigravity, Cursor, Claude, Windsurf), REST API & troubleshooting |
 | `work-log.md` | Riwayat kerja kronologis: keputusan, fix, integrasi, verifikasi |
 | `roadmap.md` | Rencana jangka pendek/menengah: OmniKB, opencode, skill development |
 | `sop-opencode-provider.md` | SOP pasang/ubah provider AI di opencode (contoh: HCN Sec) |
+| `release-and-commit-rules.md` | Kontrak Git conventional commit, SemVer automation, dan GitHub release pipeline |
 
 ## Aturan Pakai
 

@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-339933?style=flat-square&logo=node.js)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
-[![Tests](https://img.shields.io/badge/Tests-11%2F11%20PASS%20(100%25)-success?style=flat-square)](test/run-tests.js)
+[![Tests](https://img.shields.io/badge/Tests-12%2F12%20PASS%20(100%25)-success?style=flat-square)](test/run-tests.js)
 [![Token Savings](https://img.shields.io/badge/Token%20Savings-85%25%20--%2095%25-green?style=flat-square)](test/benchmark-token-savings.js)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-purple?style=flat-square)](https://modelcontextprotocol.io)
 
@@ -68,65 +68,80 @@ Measured directly on real-world repositories via `npm run benchmark-tokens`:
 
 ## ⚡ Quickstart & Installation
 
-### 1. Interactive Setup Wizard (Recommended)
+> 📖 **Need OS-specific paths or troubleshooting?** Check the **[Complete Installation & Setup Guide](docs/installation-and-setup-guide.md)**.
 
-Run OmniKB instantly via `npx` or install globally with npm:
+### Option 1: Zero-Install with `npx` (Recommended for AI Agents & MCP)
 
-```bash
-# Run interactive setup wizard (auto-configures Second Brain & AI Editors)
-npx omnikb setup
-
-# Or install globally
-npm install -g omnikb
-```
-
-The interactive wizard will:
-1. Prompt you to pick a custom **Second Brain** memory directory (default: `~/.omnikb`).
-2. Auto-detect and wire the MCP configuration into your selected AI editors (**Antigravity, Cursor, Claude Code / Desktop, Windsurf**).
-
----
-
-### 2. Manual MCP Integration (Editor Config)
-
-If you prefer adding OmniKB manually to your editor's configuration (`mcp.json`, `.gemini/config/mcp.json`, or `claude_desktop_config.json`):
+You don't need to install anything permanently. Add OmniKB directly to your AI editor's MCP configuration (`mcp.json`, `.gemini/config/mcp.json`, or `claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "omnikb": {
       "command": "npx",
-      "args": [
-        "-y",
-        "omnikb",
-        "serve",
-        "--mcp"
-      ]
+      "args": ["-y", "omnikb", "serve", "--mcp"]
     }
   }
 }
 ```
 
+Or run the interactive onboarding wizard in 1 command:
+```bash
+npx omnikb setup
+```
+
 ---
 
-### 3. Local Development & Contributors
+### Option 2: Global Installation via `npm` (Recommended for CLI & Terminal)
 
-To develop or contribute to the OmniKB engine locally from source:
+Install OmniKB globally on your system for fast daily CLI usage, CI/CD pipelines, and local development:
+
+```bash
+# 1. Install globally
+npm install -g omnikb
+
+# 2. Run interactive setup wizard (auto-detects and configures AI editors)
+omnikb setup
+
+# 3. Start Universal Multi-Workspace Server
+omnikb serve --port 7890
+```
+
+---
+
+### Option 3: Local Development & Contributors
+
+To build and run the latest OmniKB engine directly from source:
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/ashhstr/omnikb.git
 cd omnikb
 
-# 2. Install dependencies & build
+# 2. Install dependencies & build TypeScript
 npm install
 npm run build
 
-# 3. Link executable globally
-npm link
+# 3. Verify test suite & graph health
+npm test
+npm run diagnose
 
-# 4. Launch setup wizard
-omnikb setup
+# 4. Link binary globally
+npm link
 ```
+
+---
+
+### 🔌 AI Editor Wiring Quick Reference
+
+| AI Coding Agent / IDE | Configuration Path | Setup Command / Method |
+| :--- | :--- | :--- |
+| **Google Antigravity / Gemini** | `~/.gemini/config/mcp.json` | Add `omnikb` under `mcpServers` |
+| **Claude Desktop** | `%APPDATA%\Claude\claude_desktop_config.json` *(Win)*<br>`~/Library/Application Support/Claude/...` *(Mac)* | Add `omnikb` under `mcpServers` |
+| **Claude Code CLI** | Terminal | `claude mcp add omnikb npx -y omnikb serve --mcp` |
+| **Cursor IDE** | `Cursor Settings -> Features -> MCP -> Add` | Command: `npx -y omnikb serve --mcp` |
+| **Windsurf (Codeium)** | `~/.codeium/windsurf/mcp_config.json` | Add `omnikb` under `mcpServers` |
+| **VS Code (Cline / Roo / Continue)** | Extension MCP Settings | Add `omnikb` under `mcpServers` |
 
 ---
 
