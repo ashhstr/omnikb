@@ -1,16 +1,16 @@
 # OmniKB Live Knowledge Base & Code Architecture Map
 
-> **Auto-Updated**: 2026-08-18T14:51:42.165Z | **Indexed Files**: 116 | **Total Symbols**: 575 | **Call & Dependency Edges**: 3174
+> **Auto-Updated**: 2026-08-20T00:19:55.217Z | **Indexed Files**: 112 | **Total Symbols**: 571 | **Call & Dependency Edges**: 3174
 
 ## 1. Executive Architecture Overview
 
 | Metric | Count |
 | :--- | :--- |
-| **Source Files** | `116` |
+| **Source Files** | `112` |
 | **Functions & Methods** | `138` |
 | **Classes & Interfaces** | `56` |
 | **Web Routes / API Endpoints** | `1` |
-| **Languages** | `markdown: 60`, `json: 8`, `javascript: 9`, `typescript: 32`, `unknown: 7` |
+| **Languages** | `markdown: 60`, `json: 8`, `javascript: 9`, `typescript: 32`, `unknown: 3` |
 
 ## 2. High Centrality Components (God Nodes & Hotspots)
 
@@ -18,14 +18,14 @@ The most referenced and interconnected symbols in this repository:
 
 | Symbol | File Path | Total Connections | Inbound Callers | Outbound Calls | PageRank |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.0254` |
-| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0215` |
-| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0165` |
+| **`find`** | `src/core/workspace-registry.ts` | **33** | 23 | 10 | `0.026` |
+| **`parse`** | `src/core/parsers/dart.ts` | **31** | 24 | 7 | `0.0217` |
+| **`getLineNumber`** | `src/core/parsers/types.ts` | **21** | 21 | 0 | `0.0167` |
 | **`ILanguageParser`** | `src/core/parsers/types.ts` | **13** | 13 | 0 | `0.0164` |
-| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0136` |
-| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0131` |
-| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0128` |
-| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0102` |
+| **`load`** | `src/core/workspace-registry.ts` | **14** | 8 | 6 | `0.0138` |
+| **`findMatchingBracketEndLine`** | `src/core/parsers/types.ts` | **16** | 15 | 1 | `0.0132` |
+| **`question`** | `src/setup-wizard.ts` | **6** | 4 | 2 | `0.0129` |
+| **`getAllFiles`** | `test/benchmark-token-savings.js` | **8** | 4 | 4 | `0.0103` |
 
 ## 3. Web & API Route Registry
 
@@ -35,25 +35,38 @@ The most referenced and interconnected symbols in this repository:
 
 ## 4. Module Map & Component Directory
 
+### `/.agents` (47 files)
+- **`.agents/auditor_1/BRIEFING.md`**: `12 symbols`
+- **`.agents/auditor_1/DISPATCH.md`**: `2 symbols`
+- **`.agents/auditor_1/handoff.md`**: `16 symbols`
+- **`.agents/auditor_1/progress.md`**: `3 symbols`
+- **`.agents/challenger_1/BRIEFING.md`**: `11 symbols`
+- **`.agents/challenger_1/DISPATCH.md`**: `2 symbols`
+- **`.agents/challenger_1/handoff.md`**: `16 symbols`
+- **`.agents/challenger_1/progress.md`**: `3 symbols`
+- **`.agents/challenger_2/BRIEFING.md`**: `11 symbols`
+- **`.agents/challenger_2/DISPATCH.md`**: `3 symbols`
+- *(and 37 more files)*
+
 ### `/root` (12 files)
 - **`AGENTS.md`**: `1 symbols`
+- **`CHANGELOG.md`**: `1 symbols`
+- **`CONTRIBUTING.md`**: `1 symbols`
+- **`ORIGINAL_REQUEST.md`**: `9 symbols`
 - **`package-lock.json`**: `1 symbols`
+- **`README.md`**: `1 symbols`
 - **`SECURITY.md`**: `1 symbols`
 - **`tsconfig.json`**: `1 symbols`
-- **`CHANGELOG.md`**: `1 symbols`
-- **`ORIGINAL_REQUEST.md`**: `9 symbols`
-- **`.npmignore`**: `1 symbols`
-- **`LICENSE`**: `1 symbols`
-- **`package.json`**: `1 symbols`
 - **`.gitignore`**: `1 symbols`
+- **`package.json`**: `1 symbols`
 - *(and 2 more files)*
 
 ### `/docs` (6 files)
+- **`docs/omnikb-4-pillars-synthesis-report.md`**: `1 symbols`
 - **`docs/README.md`**: `1 symbols`
 - **`docs/release-and-commit-rules.md`**: `1 symbols`
 - **`docs/roadmap.md`**: `1 symbols`
 - **`docs/sop-four-pillars.md`**: `5 symbols`
-- **`docs/omnikb-4-pillars-synthesis-report.md`**: `1 symbols`
 - **`docs/work-log.md`**: `1 symbols`
 
 ### `/examples` (6 files)
@@ -64,20 +77,18 @@ The most referenced and interconnected symbols in this repository:
 - **`examples/configs/opencode.json`**: `1 symbols`
 - **`examples/configs/windsurf.mcp.json`**: `1 symbols`
 
-### `/scripts` (11 files)
+### `/scripts` (7 files)
 - **`scripts/benchmark-tokens.js`**: `2 symbols`
 - **`scripts/diagnose.js`**: `1 symbols`
+- **`scripts/impact-check.js`**: `1 symbols`
 - **`scripts/index-workspace.js`**: `2 symbols`
 - **`scripts/pre-commit.js`**: `1 symbols`
-- **`scripts/release.js`**: `2 symbols`
 - **`scripts/supervisor.js`**: `2 symbols`
-- **`scripts/omnikb-silent.vbs`**: `1 symbols`
-- **`scripts/omnikb.sh`**: `1 symbols`
-- **`scripts/install-startup.vbs`**: `1 symbols`
-- **`scripts/omnikb-startup.bat`**: `1 symbols`
-- *(and 1 more files)*
+- **`scripts/release.js`**: `2 symbols`
 
 ### `/src` (32 files)
+- **`src/cli.ts`**: `3 symbols`
+- **`src/core/config.ts`**: `4 symbols`
 - **`src/core/graph.ts`**: `10 symbols`
 - **`src/core/parser-ts-ast.ts`**: `14 symbols`
 - **`src/core/parser.ts`**: `6 symbols`
@@ -86,26 +97,11 @@ The most referenced and interconnected symbols in this repository:
 - **`src/core/parsers/go.ts`**: `4 symbols`
 - **`src/core/parsers/jvm.ts`**: `4 symbols`
 - **`src/core/parsers/php.ts`**: `4 symbols`
-- **`src/core/parsers/prisma.ts`**: `4 symbols`
-- **`src/core/parsers/python.ts`**: `5 symbols`
 - *(and 22 more files)*
 
 ### `/test` (2 files)
 - **`test/benchmark-token-savings.js`**: `4 symbols`
 - **`test/run-tests.js`**: `5 symbols`
-
-### `/.agents` (47 files)
-- **`.agents/ORIGINAL_REQUEST.md`**: `9 symbols`
-- **`.agents/explorer_1/DISPATCH.md`**: `2 symbols`
-- **`.agents/explorer_3/DISPATCH.md`**: `2 symbols`
-- **`.agents/explorer_3/handoff.md`**: `9 symbols`
-- **`.agents/explorer_2/DISPATCH.md`**: `2 symbols`
-- **`.agents/explorer_3/progress.md`**: `2 symbols`
-- **`.agents/explorer_3/BRIEFING.md`**: `9 symbols`
-- **`.agents/explorer_2/handoff.md`**: `16 symbols`
-- **`.agents/explorer_2/progress.md`**: `3 symbols`
-- **`.agents/explorer_2/BRIEFING.md`**: `9 symbols`
-- *(and 37 more files)*
 
 ## 5. Agent Instructions for Context Retrieval
 
